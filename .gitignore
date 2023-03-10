@@ -111,4 +111,5 @@ dkms.conf
 # 391 specific
 *.qcow
 source/
-
+student-distrib/*.o
+student-distrib/*.dep
