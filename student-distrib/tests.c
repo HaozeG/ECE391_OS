@@ -45,7 +45,7 @@ int idt_test(){
 	return result;
 }
 
-int devide_zero_test() {
+int divide_zero_test() {
 	int i = 0;
     int j = 5;
 	j = 5 / i;
@@ -62,7 +62,7 @@ int devide_zero_test() {
 
 /* Test suite entry point */
 void launch_tests(){
-	TEST_OUTPUT("devide zero", devide_zero_test());
+	TEST_OUTPUT("divide zero", divide_zero_test());
 	// TEST_OUTPUT("idt_test", idt_test());
 	// launch your tests here
 }

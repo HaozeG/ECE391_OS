@@ -1,14 +1,19 @@
-#define EXCEPT_LINK(name,func)   \
-    .GLOBL name                  ;\
-    name:                        ;\
-        pushal                    ;\
-        pushfl                    ;\
-        call func                 ;\
+#define ASM     1
+; #include "wrapper.h"
+
+#define EXCEPT_LINK(name, func, num)   \
+    .GLOBL name                     ;\
+    name:                           ;\
+        pushal                      ;\
+        pushfl                      ;\
+        pushl $num                  ;\
+        call func                   ;\
+        addl $4, %esp               ;\
         popfl                     ;\
         popal                     ;\
         iret                      ;\
 
-EXCEPT_LINK(DIVISION_ERROR, division_error)
+EXCEPT_LINK(DIVISION_ERROR, division_error, 0)
 
 
 #define INTR_LINK(name,func)    \
