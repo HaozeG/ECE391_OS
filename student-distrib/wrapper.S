@@ -74,6 +74,10 @@
 ; 	    POPL	%EBX                    ;\
 ; 	    RET                             ;\
 
+/*
+    Numbers are related to vector number defined by Intel
+    Ref: https://wiki.osdev.org/Exceptions
+*/
 EXCEPT_LINK(DIVISION_ERROR, common_exception_handler, 0)
 EXCEPT_LINK(DEBUG, common_exception_handler, 1)
 EXCEPT_LINK(NON_MASKABLE_INTERRUPT, common_exception_handler, 2)
@@ -101,6 +105,10 @@ EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
 INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
 
+/*
+    System call function for test
+    0x80: interrupt vector for system call 
+*/
 .GLOBL ECE391_TEMP
 ECE391_TEMP:
     INT $0x80

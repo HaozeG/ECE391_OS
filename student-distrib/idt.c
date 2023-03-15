@@ -3,6 +3,7 @@
 #include "x86_desc.h"
 #include "wrapper.h"
 
+// Array of function addresses for SET_IDT_ENTRY
 void *exception_handlers[NUM_EXCEPTION] = {
     DIVISION_ERROR,
     DEBUG,
@@ -33,6 +34,16 @@ void *exception_handlers[NUM_EXCEPTION] = {
     RESERVED
 };
 
+/*
+* init_idt
+*   DESCRIPTION: Initialize IDT, including filling in IDT descriptors
+*               and load IDTR register. New interrupts or system calls
+*               can be modified here.
+*   INPUTS: none
+*   RETURN VALUE: none
+*   SIDE EFFECTS: All entries reserved by Intel are set with a handler 
+*           that outputs "Reserved" message;
+*/
 void init_idt() {
     int i;
     // Exceptions
@@ -67,28 +78,29 @@ void init_idt() {
         SET_IDT_ENTRY(idt[i], exception_handlers[NUM_EXCEPTION - 1]);    // Reserved handler
     }
 
-    // Interrupts
-    // Keyboard
-    // idt[KEYBOARD_VEC].present = 1;
-    // SET_IDT_ENTRY(idt[KEYBOARD_VEC], keyboard_handler);
-    // RTC
-    // idt[RTC_VEC].present = 1;
-    // SET_IDT_ENTRY(idt[RTC_VEC], keyboard_handler);
-
     // System call
     // DPL = 3(user)
     idt[SYS_CALL_VEC].dpl = 3;
     // enable
     idt[SYS_CALL_VEC].present = 1;
     SET_IDT_ENTRY(idt[SYS_CALL_VEC], INTR_ECE391_TEMP);
-    
+
+    // Interrupts
+    // Keyboard
+    // idt[KEYBOARD_VEC].present = 1;
+    // SET_IDT_ENTRY(idt[KEYBOARD_VEC], keyboard_handler);
+    // RTC
+    // idt[RTC_VEC].present = 1;
+    // SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
+
     lidt(idt_desc_ptr); // Load IDTR
 
     printf("Enabling Interrupts\n");
+    // TODO: Uncomment here after interrupts are set
     // sti();
 };
 
-// Syscall
+// Syscall that print a message and stuck in loop
 void ece391_temp () {
     printf("SYSCALL! STUCK IN LOOP...\n");
     do {

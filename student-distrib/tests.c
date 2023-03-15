@@ -42,10 +42,17 @@ int idt_test(){
 			result = FAIL;
 		}
 	}
-	// divide_zero_test();
 	return result;
 }
 
+/*
+* Divide zero test
+*   DESCRIPTION: Test exception 0
+*   INPUTS: none
+*	OUTPUTS: none
+*   SIDE EFFECTS: stuck in loop if handled correctly
+*	Coverage: IDT entry 0
+*/
 int divide_zero_test() {
 	int i = 0;
     int j = 5;
@@ -53,6 +60,14 @@ int divide_zero_test() {
 	return 1;
 }
 
+/*
+* System call test
+*   DESCRIPTION: Test system call
+*   INPUTS: none
+*	OUTPUTS: none
+*   SIDE EFFECTS: stuck in loop if handled correctly
+*	Coverage: IDT entry 0x80(system call)
+*/
 int syscall_test() {
 	ECE391_TEMP();
 	return 1;

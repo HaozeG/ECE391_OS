@@ -1,7 +1,7 @@
 #include "exception.h"
 #include "types.h"
 
-
+// Array of exception messages
 static char *exception_msg[32] = {
     "Division Error",
     "Debug",
@@ -32,6 +32,20 @@ static char *exception_msg[32] = {
     "Reserved"
 };
 
+/*
+* common_exception_handler
+*   DESCRIPTION: Handle exceptions that shows a "blue screen"
+*           Exception message would be shown. Additional message
+*           would follow based on error code if it is valid.
+*   INPUTS: num - vector number of invoked exception
+*           error code - 0 if no error code is generated or generated
+*                       error code is 0
+*                       or 32-bit value configured differently for each
+*                       exception
+*   RETURN VALUE: none
+*   SIDE EFFECTS: Kernel would stuck in infinite loop; Only error code of 
+*               page fault is configured
+*/
 void common_exception_handler(int32_t num, int32_t error_code) {
     clear();
     printf("%s\n", exception_msg[num]);
