@@ -1,48 +1,66 @@
 #include "exception.h"
+#include "types.h"
 
 
 static char *exception_msg[32] = {
-"Division Error",
-"Debug",
-"Non-maskable Interrupt",
-"Breakpoint",
-"Overflow",
-"Bound Range Exceeded",
-"Invalid Opcode",
-"Device Not Available",
-"Double Fault",
-"Coprocessor Segment Overrun",
-"Invalid TSS",
-"Segment Not Present",
-"Stack-Segment Fault",
-"General Protection Fault",
-"Page Fault",
-"Reserved",
-"x87 Floating-Point Exception",
-"Alignment Check",
-"Machine Check",
-"SIMD Floating-Point Exception",
-"Virtualization Exception",
-"Control Protection Exception",
-"Reserved",
-"Hypervisor Injection Exception",
-"VMM Communication Exception",
-"Security Exception",
-"Reserved"
+    "Division Error",
+    "Debug",
+    "Non-maskable Interrupt",
+    "Breakpoint",
+    "Overflow",
+    "Bound Range Exceeded",
+    "Invalid Opcode",
+    "Device Not Available",
+    "Double Fault",
+    "Coprocessor Segment Overrun",
+    "Invalid TSS",
+    "Segment Not Present",
+    "Stack-Segment Fault",
+    "General Protection Fault",
+    "Page Fault",
+    "Reserved",
+    "x87 Floating-Point Exception",
+    "Alignment Check",
+    "Machine Check",
+    "SIMD Floating-Point Exception",
+    "Virtualization Exception",
+    "Control Protection Exception",
+    "Reserved",
+    "Hypervisor Injection Exception",
+    "VMM Communication Exception",
+    "Security Exception",
+    "Reserved"
 };
 
-// void exception_handler_wrapper() {
+void common_exception_handler(int32_t num, int32_t error_code) {
+    clear();
+    printf("%s\n", exception_msg[num]);
+    if (error_code != 0) {
+        printf("Error code: %x\n", error_code);
+        // Error code
+        if (num == 14) {
+            // Page fault
+            //  31              15                             4               0
+            // +---+--  --+---+-----+---+--  --+---+----+----+---+---+---+---+---+
+            // |   Reserved   | SGX |   Reserved   | SS | PK | I | R | U | W | P |
+            // +---+--  --+---+-----+---+--  --+---+----+----+---+---+---+---+---+
+            if (error_code & 0x0001) {
+                printf("Page-protection Violation!\n");
+            }
+            if ((error_code >> 1) & 0x0001) {
+                printf("caused by WRITE ACCESS\n");
+            } else {
+                printf("caused by READ ACCESS\n");
+            }
+            if ((error_code >> 2) & 0x0001) {
+                printf("CPL = 3\n");
+            }
+            if ((error_code >> 4) & 0x0001) {
+                printf("caused by INSTRUCTION FETCH\n");
+            }
+        }
+    }
 
-
-
-
-// }
-// DO_CALL(ECE391_TEMP,0);
-// TODO: Use asm wrapper to deal with values on stack
-void division_error() {
-    // clear();
-    printf("INTO TEST\n");
-    printf("%s\n", exception_msg[0]);
     do {
     }while (1);
 }

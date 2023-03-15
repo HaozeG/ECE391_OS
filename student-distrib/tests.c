@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "wrapper.h"
 
 #define PASS 1
 #define FAIL 0
@@ -41,7 +42,7 @@ int idt_test(){
 			result = FAIL;
 		}
 	}
-
+	// divide_zero_test();
 	return result;
 }
 
@@ -49,6 +50,11 @@ int divide_zero_test() {
 	int i = 0;
     int j = 5;
 	j = 5 / i;
+	return 1;
+}
+
+int syscall_test() {
+	ECE391_TEMP();
 	return 1;
 }
 
@@ -62,7 +68,8 @@ int divide_zero_test() {
 
 /* Test suite entry point */
 void launch_tests(){
-	TEST_OUTPUT("divide zero", divide_zero_test());
+	TEST_OUTPUT("sys call test", syscall_test());
+	// TEST_OUTPUT("divide zero", divide_zero_test());
 	// TEST_OUTPUT("idt_test", idt_test());
 	// launch your tests here
 }
