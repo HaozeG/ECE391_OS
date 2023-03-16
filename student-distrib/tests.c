@@ -88,6 +88,7 @@ int syscall_test()
  */
 int keyboard_test()
 {
+	clear();
 	do
 	{
 		// printf("here!\n");
@@ -106,9 +107,8 @@ int keyboard_test()
 /* Test suite entry point */
 void launch_tests()
 {
+	TEST_OUTPUT("idt_test", idt_test());
+	TEST_OUTPUT("divide zero", divide_zero_test());
 	TEST_OUTPUT("keyboard test", keyboard_test());
-	// keyboard_test();
-	// TEST_OUTPUT("divide zero", divide_zero_test());
-	// TEST_OUTPUT("idt_test", idt_test());
 	// launch your tests here
 }
