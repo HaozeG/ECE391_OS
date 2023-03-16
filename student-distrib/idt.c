@@ -3,6 +3,7 @@
 #include "x86_desc.h"
 #include "wrapper.h"
 
+
 // Array of function addresses for SET_IDT_ENTRY
 void *exception_handlers[NUM_EXCEPTION] = {
     DIVISION_ERROR,
@@ -87,17 +88,17 @@ void init_idt() {
 
     // Interrupts
     // Keyboard
-    // idt[KEYBOARD_VEC].present = 1;
-    // SET_IDT_ENTRY(idt[KEYBOARD_VEC], keyboard_handler);
+    idt[KEYBOARD_VEC].present = 1;
+    SET_IDT_ENTRY(idt[KEYBOARD_VEC], KEYBOARD_INTERRUPT);
     // RTC
     // idt[RTC_VEC].present = 1;
     // SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
 
     lidt(idt_desc_ptr); // Load IDTR
 
-    printf("Enabling Interrupts\n");
+    // printf("Enabling Interrupts\n");
     // TODO: Uncomment here after interrupts are set
-    // sti();
+    sti();
 };
 
 // Syscall that print a message and stuck in loop
