@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "wrapper.h"
 
 #define PASS 1
 #define FAIL 0
@@ -41,8 +42,35 @@ int idt_test(){
 			result = FAIL;
 		}
 	}
-
 	return result;
+}
+
+/*
+* Divide zero test
+*   DESCRIPTION: Test exception 0
+*   INPUTS: none
+*	OUTPUTS: none
+*   SIDE EFFECTS: stuck in loop if handled correctly
+*	Coverage: IDT entry 0
+*/
+int divide_zero_test() {
+	int i = 0;
+    int j = 5;
+	j = 5 / i;
+	return 1;
+}
+
+/*
+* System call test
+*   DESCRIPTION: Test system call
+*   INPUTS: none
+*	OUTPUTS: none
+*   SIDE EFFECTS: stuck in loop if handled correctly
+*	Coverage: IDT entry 0x80(system call)
+*/
+int syscall_test() {
+	ECE391_TEMP();
+	return 1;
 }
 
 // add more tests here
@@ -55,6 +83,8 @@ int idt_test(){
 
 /* Test suite entry point */
 void launch_tests(){
-	TEST_OUTPUT("idt_test", idt_test());
+	TEST_OUTPUT("sys call test", syscall_test());
+	// TEST_OUTPUT("divide zero", divide_zero_test());
+	// TEST_OUTPUT("idt_test", idt_test());
 	// launch your tests here
 }

@@ -1,0 +1,21 @@
+<=========================================================>
+<=================>    BUG LOG HEADER   <=================>
+<=========================================================>
+Assignment:
+    MP3
+CheckPoint:
+    CP1
+CreateTime:
+    2023.3.14
+
+<--------------------------------------------------------->
+                          BUG 1                          
+<--------------------------------------------------------->
+Time:
+    2023.3.14.
+Creator:
+    Haoze Gao.
+Description:
+    Exception handler added but ineffective.
+Solution:
+    Assign seg selector field of idt entry correctly.
