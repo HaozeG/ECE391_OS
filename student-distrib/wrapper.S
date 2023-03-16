@@ -49,6 +49,7 @@
     name:                       ;\
         pushal                  ;\
         pushfl                  ;\
+        cli                     ;\
         call func               ;\
         popfl                   ;\
         popal                   ;\
