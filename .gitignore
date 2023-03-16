@@ -113,3 +113,5 @@ dkms.conf
 source/
 student-distrib/*.o
 student-distrib/*.dep
+.vscode/
+*.json

@@ -49,6 +49,7 @@
     name:                       ;\
         pushal                  ;\
         pushfl                  ;\
+        cli                     ;\
         call func               ;\
         popfl                   ;\
         popal                   ;\
@@ -104,6 +105,8 @@ EXCEPT_LINK_ERRORCODE(SECURITY_EXCEPTION, common_exception_handler, 30)
 EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
 INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
+
+INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
 
 /*
     System call function for test
