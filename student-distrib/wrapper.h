@@ -2,6 +2,7 @@
 #define WRAPPER_H
 
 #include "types.h"
+#include "interrupt.h"
 
 #ifndef ASM
 
@@ -41,6 +42,9 @@ extern void ECE391_TEMP();
 extern void INTR_ECE391_TEMP();
 // Specific system call handler 
 extern void ece391_temp();
+
+// wrapped keyboard handler
+extern void KEYBOARD_INTERRUPT();
 
 #endif
 
