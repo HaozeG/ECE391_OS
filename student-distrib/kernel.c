@@ -146,8 +146,7 @@ void entry(unsigned long magic, unsigned long addr) {
      * PIC, any other initialization stuff... */
     init_idt();
 
-    // init keyboard device to IRQ 1
-    enable_irq(1);
+
 
 #ifdef RUN_TESTS
     /* Run tests */
