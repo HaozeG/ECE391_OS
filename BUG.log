@@ -19,3 +19,15 @@ Description:
     Exception handler added but ineffective.
 Solution:
     Assign seg selector field of idt entry correctly.
+
+<--------------------------------------------------------->
+                          BUG 2                          
+<--------------------------------------------------------->
+Time:
+    2023.3.17
+Creator:
+    Allen Z.
+Description:
+    Paging was mapping more pages than expected.
+Solution:
+    Base address for the page directory for the page table was right shifted by 22 instead of 12.
