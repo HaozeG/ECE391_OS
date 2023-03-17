@@ -10,50 +10,50 @@
 
 typedef union direc_entry {
     struct {
-        uint8_t present : 1;
-        uint8_t read_write : 1;
-        uint8_t user_supervisor :1;
-        uint8_t write_through :1;
-        uint8_t cache_disabled :1;
-        uint8_t accessed :1;
-        uint8_t dirty :1;
-        uint8_t page_size :1;
-        uint8_t global_page :1;
-        uint8_t avail :3;
-        uint8_t page_table_attribute_index :1;
-        uint16_t reserved :9;
-        uint16_t page_base_addr: 10;
+        uint32_t present : 1;
+        uint32_t read_write : 1;
+        uint32_t user_supervisor :1;
+        uint32_t write_through :1;
+        uint32_t cache_disabled :1;
+        uint32_t accessed :1;
+        uint32_t dirty :1;
+        uint32_t page_size :1;
+        uint32_t global_page :1;
+        uint32_t avail :3;
+        uint32_t page_table_attribute_index :1;
+        uint32_t reserved :9;
+        uint32_t page_base_addr: 10;
 
     } pde_4mb_page __attribute__((packed));
 
     struct {
-        uint8_t present : 1;
-        uint8_t read_write : 1;
-        uint8_t user_supervisor :1;
-        uint8_t write_through :1;
-        uint8_t cache_disabled :1;
-        uint8_t accessed :1;
-        uint8_t reserved :1;
-        uint8_t page_size :1;
-        uint8_t global_page :1;
-        uint8_t avail : 3;
+        uint32_t present : 1;
+        uint32_t read_write : 1;
+        uint32_t user_supervisor :1;
+        uint32_t write_through :1;
+        uint32_t cache_disabled :1;
+        uint32_t accessed :1;
+        uint32_t reserved :1;
+        uint32_t page_size :1;
+        uint32_t global_page :1;
+        uint32_t avail : 3;
         uint32_t page_base_addr: 20;
     } pde_page_table __attribute__((packed));
 } pde_t; 
 
 typedef struct table_entry {
-    uint8_t present : 1;
-    uint8_t read_write : 1;
-    uint8_t user_supervisor :1;
-    uint8_t write_through :1;
-    uint8_t cache_disabled :1;
-    uint8_t accessed :1;
-    uint8_t dirty :1;
-    uint8_t page_table_attribute_index :1;
-    uint8_t global_page :1;
-    uint8_t avail :3;
+    uint32_t present : 1;
+    uint32_t read_write : 1;
+    uint32_t user_supervisor :1;
+    uint32_t write_through :1;
+    uint32_t cache_disabled :1;
+    uint32_t accessed :1;
+    uint32_t dirty :1;
+    uint32_t page_table_attribute_index :1;
+    uint32_t global_page :1;
+    uint32_t avail :3;
     uint32_t page_base_addr :20;
-} __attribute__((packed)) pte_t; 
+} pte_t __attribute__((packed)); 
 
 pde_t page_directory[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB))); //remember to align to 4096
 pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
@@ -63,6 +63,7 @@ pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
 extern void page_init();
 extern void loadPageDirectory(unsigned int*);
 extern void enablePaging();
+
 #endif /* ASM */
 
 #endif /* _x86_DESC_H */

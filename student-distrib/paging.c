@@ -1,5 +1,5 @@
 #include "paging.h"
-
+#include "lib.h"
 void page_init() {
     int i;
     //memset(page_directory, 0, PAGE_SIZE*sizeof(*page_directory));
@@ -37,7 +37,7 @@ void page_init() {
     //map the video memory
     page_directory[VID_MEM_ADDR >> 22].pde_page_table.present = 1;
     page_directory[VID_MEM_ADDR >> 22].pde_page_table.read_write = 1;
-    page_directory[VID_MEM_ADDR >> 22].pde_page_table.page_base_addr = (uint32_t) page_table >> 22;
+    page_directory[VID_MEM_ADDR >> 22].pde_page_table.page_base_addr = (uint32_t) page_table >> 12;
 
     //map the page table pointed to by the video memory address
     for (i = 0; i < PAGE_SIZE; i++) {
@@ -45,7 +45,7 @@ void page_init() {
         page_table[i].read_write = 0;
         page_table[i].user_supervisor = 0;
         page_table[i].write_through = 0;
-        page_table[i].cache_disabled = 0;
+        page_table[i].cache_disabled = 1;
         page_table[i].accessed = 0;
         page_table[i].dirty = 0;
         page_table[i].page_table_attribute_index = 0;
@@ -57,5 +57,13 @@ void page_init() {
     page_table[VID_MEM_ADDR >> 12].read_write = 1;
     page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
     // set other fields of the pagetable
-
+    loadPageDirectory(page_directory);
+    // clear();
+    // printf("%x \n", page_directory[0]);
+    // printf("%x \n", page_directory[1]);
+    // printf("%x \n", page_table[VID_MEM_ADDR >> 12]);
+    // printf("%x \n", KERNEL_ADDR >> 22);
+    // printf("%x \n", VID_MEM_ADDR >> 22);
+    // printf("%d", sizeof(pte_t));
+    enablePaging();
 }
