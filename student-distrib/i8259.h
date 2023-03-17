@@ -11,6 +11,9 @@
 /* Ports that each PIC sits on */
 #define MASTER_8259_PORT    0x20
 #define SLAVE_8259_PORT     0xA0
+// Data ports of each PIC
+#define MASTER_8259_DATA    (MASTER_8259_PORT + 1)
+#define SLAVE_8259_DATA    (SLAVE_8259_PORT + 1)
 
 /* Initialization control words to init each PIC.
  * See the Intel manuals for details on the meaning
@@ -26,6 +29,11 @@
  * the interrupt number and sent out to the PIC
  * to declare the interrupt finished */
 #define EOI                 0x60
+
+// Parameters
+#define MAX_IRQ_NUM         16   
+#define MAX_IRQ_NUM_MASTER  8   
+#define SLAVE_IRQ           2       // slave PIC connects with IRQ2 of master PIC     
 
 /* Externally-visible functions */
 

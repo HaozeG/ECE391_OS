@@ -84,6 +84,15 @@ ldt_desc_ptr:
 
 gdt_bottom:
 
+.align 4
+    .word 0 # Padding
+gdt_desc:
+    # |----BASE----| LIMIT |
+    # LIMIT: Restricted from gdt to gdt_bottom
+    # -1: LIMIT is 1 less than the length of the table
+    .word gdt_bottom - gdt - 1
+    .long gdt
+
     .align 16
 ldt:
     .rept 4
