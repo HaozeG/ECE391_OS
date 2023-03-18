@@ -47,19 +47,22 @@ static char *exception_msg[32] = {
 *               page fault is configured
 */
 void common_exception_handler(int32_t num, int32_t error_code) {
-    clear();
+    // clear();
     printf("%s\n", exception_msg[num]);
     if (error_code != 0) {
         printf("Error code: %x\n", error_code);
         // Error code
         if (num == 14) {
+            uint32_t error_address;
             // Page fault
             //  31              15                             4               0
             // +---+--  --+---+-----+---+--  --+---+----+----+---+---+---+---+---+
             // |   Reserved   | SGX |   Reserved   | SS | PK | I | R | U | W | P |
             // +---+--  --+---+-----+---+--  --+---+----+----+---+---+---+---+---+
             if (error_code & 0x0001) {
-                printf("Page-protection Violation!\n");
+                printf("Page-Protection Violation!\n");
+            } else {
+                printf("caused by Non-Present Page!\n");
             }
             if ((error_code >> 1) & 0x0001) {
                 printf("caused by WRITE ACCESS\n");
@@ -72,6 +75,12 @@ void common_exception_handler(int32_t num, int32_t error_code) {
             if ((error_code >> 4) & 0x0001) {
                 printf("caused by INSTRUCTION FETCH\n");
             }
+            asm volatile ("movl %%cr2, %0"   \
+                :                           \
+                : "r"(error_address)        \
+                : "memory"                  \
+            );
+            printf("Error virtual address: 0x%x\n", error_address);
         }
     }
 

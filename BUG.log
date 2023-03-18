@@ -19,3 +19,16 @@ Description:
     Exception handler added but ineffective.
 Solution:
     Assign seg selector field of idt entry correctly.
+
+<--------------------------------------------------------->
+                          BUG 2                          
+<--------------------------------------------------------->
+Time:
+    2023.3.17.
+Creator:
+    Haoze Gao.
+Description:
+    "int $15" does not trigger the exception handling as expected.
+Solution:
+    Fix the original array of exception handlers that lacks some RESERVED
+    entries.
