@@ -2,6 +2,7 @@
 #include "x86_desc.h"
 #include "lib.h"
 #include "wrapper.h"
+#include "idt.h"
 
 #define PASS 1
 #define FAIL 0
@@ -23,7 +24,7 @@ static inline void assertion_failure()
 
 /* IDT Test - Example
  *
- * Asserts that first 10 IDT entries are not NULL
+ * Asserts that all IDT entries are not NULL; check assignment of present, size, seg_selector, dpl are correct
  * Inputs: None
  * Outputs: PASS/FAIL
  * Side Effects: None
@@ -32,20 +33,67 @@ static inline void assertion_failure()
  */
 int idt_test()
 {
+	clear();
 	TEST_HEADER;
 
 	int i;
 	int result = PASS;
-	for (i = 0; i < 10; ++i)
+	for (i = 0; i < NUM_VEC; ++i)
 	{
+		// Check existence of handler(All are connected with specific handlers or reserved ones)
 		if ((idt[i].offset_15_00 == NULL) &&
 			(idt[i].offset_31_16 == NULL))
 		{
 			assertion_failure();
 			result = FAIL;
 		}
+		if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC) {
+		// if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC || i == RTC_VEC) {
+			if (idt[i].present != 1) {
+				assertion_failure();
+				result = FAIL;
+			}
+		} else {
+			if (idt[i].present != 0) {
+				assertion_failure();
+				result = FAIL;
+			}
+		}
+		if (idt[i].seg_selector != KERNEL_CS || idt[i].size != 1) {
+			assertion_failure();
+			result = FAIL;
+		}
+		if (i == 0x80) {
+			if (idt[i].dpl != 3) {
+				assertion_failure();
+				result = FAIL;
+			}
+		} else {
+			if (idt[i].dpl != 0) {
+				assertion_failure();
+				result = FAIL;
+			}
+		}
 	}
 	return result;
+}
+
+/*
+ * int test
+ *   DESCRIPTION: Test certain interrupt handling
+ *   INPUTS: none
+ *	 OUTPUTS: none
+ *   SIDE EFFECTS: stuck in loop if handled correctly
+ *	Coverage: all IDT entry
+ */
+int int_test() {
+	clear();
+	TEST_HEADER;
+	asm volatile("int $1");
+
+	// should never reach here
+	printf("Returned from interrupt handler!\n");
+	return 1;
 }
 
 /*
@@ -58,9 +106,13 @@ int idt_test()
  */
 int divide_zero_test()
 {
+	clear();
+	TEST_HEADER;
 	int i = 0;
 	int j = 5;
 	j = 5 / i;
+	// should never reach here
+	printf("Divide zero executed!\n");
 	return 1;
 }
 
@@ -74,6 +126,8 @@ int divide_zero_test()
  */
 int syscall_test()
 {
+	clear();
+	TEST_HEADER;
 	ECE391_TEMP();
 	return 1;
 }
@@ -89,12 +143,67 @@ int syscall_test()
 int keyboard_test()
 {
 	clear();
+	TEST_HEADER;
 	do
 	{
 		// printf("here!\n");
 	} while (1);
 
 	return 1;
+}
+
+/*
+ * Dereference test
+ *   DESCRIPTION: Test the borders of paging
+ *   INPUTS: none
+ *	OUTPUTS: none
+ *   SIDE EFFECTS: none
+ *	Coverage: IDT entry 15; Paging
+	TODO: meaning of paging??(non present, size of video memory)
+ */
+int dereference_test()
+{
+	clear();
+	TEST_HEADER;
+	uint32_t b;
+	uint32_t *addr;
+	// dereference accessible addr
+	addr = &b;
+	printf("Test addr %x\n", addr);
+	b = *addr;
+
+	// dereference non-accessible addr 0
+	addr = (uint32_t *)0;
+	printf("Test addr %x\n", addr);
+	b = *addr;
+
+	// ------
+	
+	// Start of video mem
+	addr = (uint32_t *)0xB8000;
+	printf("Test addr %x\n", addr);
+	b = *addr;
+
+	// // End of video mem(4KB page)
+	// addr = (uint32_t *)(4*1024*1024 - 2);
+	// printf("Test addr %x\n", addr);
+	// b = *addr;
+	// End of video mem(4KB page)
+	addr = (uint32_t *)(0xB8000 + 4*1024 - 1);
+	addr = (uint32_t *)(0xB8000 + 1024);
+	printf("Test addr %x\n", addr);
+	b = *addr;
+	// Start of kernel page(4MB page)
+	addr = (uint32_t *)(4*1024*1024 - 1);
+	printf("Test addr %x\n", addr);
+	b = *addr;
+	// End of kernel page(4MB page)
+	addr = (uint32_t *)(8*1024*1024 - 1);
+	printf("Test addr %x\n", addr);
+	b = *addr;
+	// // should never reach here
+	// printf("Dereferenced address 0!\n");
+	return PASS;
 }
 
 // add more tests here
@@ -107,8 +216,10 @@ int keyboard_test()
 /* Test suite entry point */
 void launch_tests()
 {
-	TEST_OUTPUT("idt_test", idt_test());
-	TEST_OUTPUT("divide zero", divide_zero_test());
-	TEST_OUTPUT("keyboard test", keyboard_test());
+	// TEST_OUTPUT("idt_test", idt_test());
+	TEST_OUTPUT("dereference test", dereference_test());
+	// TEST_OUTPUT("int_test", int_test());
+	// TEST_OUTPUT("divide zero", divide_zero_test());
+	// TEST_OUTPUT("keyboard test", keyboard_test());
 	// launch your tests here
 }
