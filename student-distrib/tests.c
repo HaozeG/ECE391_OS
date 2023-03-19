@@ -167,15 +167,16 @@ int dereference_test()
 	TEST_HEADER;
 	uint32_t b;
 	uint32_t *addr;
-	// dereference accessible addr
-	addr = &b;
-	printf("Test addr %x\n", addr);
-	b = *addr;
+	uint32_t i;
+	// // dereference accessible addr
+	// addr = &b;
+	// printf("Test addr %x\n", addr);
+	// b = *addr;
 
-	// dereference non-accessible addr 0
-	addr = (uint32_t *)0;
-	printf("Test addr %x\n", addr);
-	b = *addr;
+	// // dereference non-accessible addr 0
+	// addr = (uint32_t *)0;
+	// printf("Test addr %x\n", addr);
+	// b = *addr;
 
 	// ------
 	
@@ -184,17 +185,14 @@ int dereference_test()
 	printf("Test addr %x\n", addr);
 	b = *addr;
 
-	// // End of video mem(4KB page)
-	// addr = (uint32_t *)(4*1024*1024 - 2);
-	// printf("Test addr %x\n", addr);
-	// b = *addr;
-	// End of video mem(4KB page)
-	addr = (uint32_t *)(0xB8000 + 4*1024 - 1);
-	addr = (uint32_t *)(0xB8000 + 1024);
-	printf("Test addr %x\n", addr);
-	b = *addr;
+	for (i = 1; i < 1024; i++) {
+		addr++;
+		printf("Test addr %x\n", addr);
+		b = *addr;
+	}
+
 	// Start of kernel page(4MB page)
-	addr = (uint32_t *)(4*1024*1024 - 1);
+	addr = (uint32_t *)0x400000;
 	printf("Test addr %x\n", addr);
 	b = *addr;
 	// End of kernel page(4MB page)
