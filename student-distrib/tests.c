@@ -2,9 +2,15 @@
 #include "x86_desc.h"
 #include "lib.h"
 #include "wrapper.h"
+#include "rtc.h"
+#include "idt.h"
+
+
+
 
 #define PASS 1
 #define FAIL 0
+uint8_t key_pressed;
 
 /* format these macros as you see fit */
 #define TEST_HEADER \
@@ -32,20 +38,64 @@ static inline void assertion_failure()
  */
 int idt_test()
 {
+	// TEST_HEADER;
+
+	// int i;
+	// int result = PASS;
+	// for (i = 0; i < 10; ++i)
+	// {
+	// 	if ((idt[i].offset_15_00 == NULL) &&
+	// 		(idt[i].offset_31_16 == NULL))
+	// 	{
+	// 		assertion_failure();
+	// 		result = FAIL;
+	// 	}
+	// }
+	// return result;
+	clear();
 	TEST_HEADER;
 
 	int i;
 	int result = PASS;
-	for (i = 0; i < 10; ++i)
+	for (i = 0; i < NUM_VEC; ++i)
 	{
+		// Check existence of handler(All are connected with specific handlers or reserved ones)
 		if ((idt[i].offset_15_00 == NULL) &&
 			(idt[i].offset_31_16 == NULL))
 		{
 			assertion_failure();
 			result = FAIL;
 		}
+		if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC) {
+		// if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC || i == RTC_VEC) {
+			if (idt[i].present != 1) {
+				assertion_failure();
+				result = FAIL;
+			}
+		} else {
+			if (idt[i].present != 0) {
+				assertion_failure();
+				result = FAIL;
+			}
+		}
+		if (idt[i].seg_selector != KERNEL_CS || idt[i].size != 1) {
+			assertion_failure();
+			result = FAIL;
+		}
+		if (i == 0x80) {
+			if (idt[i].dpl != 3) {
+				assertion_failure();
+				result = FAIL;
+			}
+		} else {
+			if (idt[i].dpl != 0) {
+				assertion_failure();
+				result = FAIL;
+			}
+		}
 	}
 	return result;
+
 }
 
 /*
@@ -97,6 +147,20 @@ int keyboard_test()
 	return 1;
 }
 
+/*
+ * RTC Interrupt test
+ *   DESCRIPTION: RTC interrupt
+ *   INPUTS: none
+ *	OUTPUTS: none
+ *   SIDE EFFECTS: stuck in dead loop
+ *	Coverage: IDT entry 0x28 (rtc vector)
+ */
+int rtc_test(){
+	clear();
+	rtc_on();
+	return PASS;
+}
+
 // add more tests here
 
 /* Checkpoint 2 tests */
@@ -107,8 +171,10 @@ int keyboard_test()
 /* Test suite entry point */
 void launch_tests()
 {
-	TEST_OUTPUT("idt_test", idt_test());
-	TEST_OUTPUT("divide zero", divide_zero_test());
-	TEST_OUTPUT("keyboard test", keyboard_test());
+	//TEST_OUTPUT("idt_test", idt_test());
+	//TEST_OUTPUT("divide zero", divide_zero_test());
+	//TEST_OUTPUT("keyboard test", keyboard_test());
+	TEST_OUTPUT("rtc_test", rtc_test());
 	// launch your tests here
 }
+
