@@ -3,6 +3,11 @@
 
 #define SCAN_SIZE 255
 #define PRESS_MAX 0x57
+#define KEYPORT 0x60
+#define ASC_a 0x61
+#define ASC_z 0x7A
+#define ASC_0 0x30
+#define ASC_9 0x39
 
 #define KEYBOARD_IRQ 1
 
@@ -24,12 +29,12 @@ void keyboard_handler()
          'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', '`', '\0', '\\',
          'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', '\0', '*', '\0', ' ', '\0'};
     send_eoi(KEYBOARD_IRQ);
-    scan_code = inb(0x60) & 0xff; // read scan code
-    if (scan_code > PRESS_MAX)    // only display when key is pressed
+    scan_code = inb(KEYPORT) & 0xff; // read scan code
+    if (scan_code > PRESS_MAX)       // only display when key is pressed
         return;
 
     ascii = scancode_table[scan_code];
-    if ((ascii >= 0x61 && ascii <= 0x7A) || (ascii >= 0x30 && ascii <= 0x39)) // if the key pressed is number or letter, print
+    if ((ascii >= ASC_a && ascii <= ASC_z) || (ascii >= ASC_0 && ascii <= ASC_9)) // if the key pressed is number or letter, print
     {
         printf("%c", ascii);
     }
