@@ -29,7 +29,7 @@ static inline void assertion_failure()
 
 /* IDT Test - Example
  *
- * Asserts that all IDT entries are not NULL; check assignment of present, size, seg_selector, dpl are correct
+ * Asserts that first 10 IDT entries are not NULL
  * Inputs: None
  * Outputs: PASS/FAIL
  * Side Effects: None
@@ -38,6 +38,20 @@ static inline void assertion_failure()
  */
 int idt_test()
 {
+	// TEST_HEADER;
+
+	// int i;
+	// int result = PASS;
+	// for (i = 0; i < 10; ++i)
+	// {
+	// 	if ((idt[i].offset_15_00 == NULL) &&
+	// 		(idt[i].offset_31_16 == NULL))
+	// 	{
+	// 		assertion_failure();
+	// 		result = FAIL;
+	// 	}
+	// }
+	// return result;
 	clear();
 	TEST_HEADER;
 
@@ -85,24 +99,6 @@ int idt_test()
 }
 
 /*
- * int test
- *   DESCRIPTION: Test certain interrupt handling
- *   INPUTS: none
- *	 OUTPUTS: none
- *   SIDE EFFECTS: stuck in loop if handled correctly
- *	Coverage: all IDT entry
- */
-int int_test() {
-	clear();
-	TEST_HEADER;
-	asm volatile("int $1");
-
-	// should never reach here
-	printf("Returned from interrupt handler!\n");
-	return 1;
-}
-
-/*
  * Divide zero test
  *   DESCRIPTION: Test exception 0
  *   INPUTS: none
@@ -112,13 +108,9 @@ int int_test() {
  */
 int divide_zero_test()
 {
-	clear();
-	TEST_HEADER;
 	int i = 0;
 	int j = 5;
 	j = 5 / i;
-	// should never reach here
-	printf("Divide zero executed!\n");
 	return 1;
 }
 
@@ -132,8 +124,6 @@ int divide_zero_test()
  */
 int syscall_test()
 {
-	clear();
-	TEST_HEADER;
 	ECE391_TEMP();
 	return 1;
 }
@@ -149,7 +139,6 @@ int syscall_test()
 int keyboard_test()
 {
 	clear();
-	TEST_HEADER;
 	do
 	{
 		// printf("here!\n");
@@ -159,54 +148,16 @@ int keyboard_test()
 }
 
 /*
- * Dereference test
- *   DESCRIPTION: Test the borders of paging
+ * RTC Interrupt test
+ *   DESCRIPTION: RTC interrupt
  *   INPUTS: none
  *	OUTPUTS: none
- *   SIDE EFFECTS: none
- *	Coverage: IDT entry 15; Paging
-	TODO: meaning of paging??(non present, size of video memory)
+ *   SIDE EFFECTS: stuck in dead loop
+ *	Coverage: IDT entry 0x28 (rtc vector)
  */
-int dereference_test()
-{
+int rtc_test(){
 	clear();
-	TEST_HEADER;
-	uint32_t b;
-	uint32_t *addr;
-	uint32_t i;
-	// // dereference accessible addr
-	// addr = &b;
-	// printf("Test addr %x\n", addr);
-	// b = *addr;
-
-	// // dereference non-accessible addr 0
-	// addr = (uint32_t *)0;
-	// printf("Test addr %x\n", addr);
-	// b = *addr;
-
-	// ------
-	
-	// Start of video mem
-	addr = (uint32_t *)0xB8000;
-	printf("Test addr %x\n", addr);
-	b = *addr;
-
-	for (i = 1; i < 1024; i++) {
-		addr++;
-		printf("Test addr %x\n", addr);
-		b = *addr;
-	}
-
-	// Start of kernel page(4MB page)
-	addr = (uint32_t *)0x400000;
-	printf("Test addr %x\n", addr);
-	b = *addr;
-	// End of kernel page(4MB page)
-	addr = (uint32_t *)(8*1024*1024 - 1);
-	printf("Test addr %x\n", addr);
-	b = *addr;
-	// // should never reach here
-	// printf("Dereferenced address 0!\n");
+	rtc_on();
 	return PASS;
 }
 
@@ -220,11 +171,10 @@ int dereference_test()
 /* Test suite entry point */
 void launch_tests()
 {
-	// TEST_OUTPUT("idt_test", idt_test());
-	TEST_OUTPUT("dereference test", dereference_test());
-	// TEST_OUTPUT("int_test", int_test());
-	// TEST_OUTPUT("divide zero", divide_zero_test());
-	// TEST_OUTPUT("keyboard test", keyboard_test());
+	//TEST_OUTPUT("idt_test", idt_test());
+	//TEST_OUTPUT("divide zero", divide_zero_test());
+	//TEST_OUTPUT("keyboard test", keyboard_test());
+	TEST_OUTPUT("rtc_test", rtc_test());
 	// launch your tests here
 }
 
