@@ -9,6 +9,8 @@
 #include "debug.h"
 #include "tests.h"
 #include "idt.h"
+#include "rtc.h"
+
 
 #define RUN_TESTS
 
@@ -146,7 +148,14 @@ void entry(unsigned long magic, unsigned long addr) {
      * PIC, any other initialization stuff... */
     init_idt();
 
+    // init keyboard device to IRQ 1
+    enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
+    rtc_init();
+    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
 
+
+    printf("Enabling Interrupts\n");
+    sti();
 
 #ifdef RUN_TESTS
     /* Run tests */
