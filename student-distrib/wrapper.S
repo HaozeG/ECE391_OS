@@ -43,6 +43,7 @@
     input:  name - function name
             num - index to system call
     TODO: how to deal with pass in num
+    TODO: cli needed?
 */
 #define INTR_LINK(name,func)    \
     .GLOBL name                 ;\

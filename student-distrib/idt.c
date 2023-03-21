@@ -29,6 +29,11 @@ void *exception_handlers[NUM_EXCEPTION] = {
     VIRTUALIZATION_EXCEPTION,
     CONTROL_PROTECTION_EXCEPTION,
     RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
     HYPERVISOR_INJECTION_EXCEPTION,
     VMM_COMMUNICATION_EXCEPTION,
     SECURITY_EXCEPTION,
@@ -76,7 +81,7 @@ void init_idt() {
         // disable all
         idt[i].present = 0;
         idt[i].seg_selector = KERNEL_CS;
-        SET_IDT_ENTRY(idt[i], exception_handlers[NUM_EXCEPTION - 1]);    // Reserved handler
+        SET_IDT_ENTRY(idt[i], RESERVED);    // Reserved handler
     }
 
     // System call
