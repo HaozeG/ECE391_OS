@@ -38,7 +38,7 @@ typedef union direc_entry {
         uint32_t global_page :1;
         uint32_t avail : 3;
         uint32_t page_base_addr: 20;
-    } pde_page_table __attribute__(());
+    } pde_page_table __attribute__((packed));
 } pde_t; 
 
 typedef struct table_entry {

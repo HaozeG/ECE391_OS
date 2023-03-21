@@ -3,9 +3,11 @@
 #include "lib.h"
 #include "wrapper.h"
 #include "idt.h"
+#include "rtc.h"
 
 #define PASS 1
 #define FAIL 0
+uint8_t key_pressed;
 
 /* format these macros as you see fit */
 #define TEST_HEADER \
@@ -201,11 +203,10 @@ int dereference_test() {
  */
 int rtc_test(){
 	clear();
-	
-
 	rtc_on();
 	return PASS;
 }
+
 
 // add more tests here
 
@@ -218,7 +219,9 @@ int rtc_test(){
 void launch_tests()
 {
 	// TEST_OUTPUT("idt_test", idt_test());
-	TEST_OUTPUT("dereference test", dereference_test());
+	// TEST_OUTPUT("dereference test", dereference_test());
+	rtc_test();
+	// TEST_OUTPUT("rtc_test", rtc_test());
 	// TEST_OUTPUT("int_test", int_test());
 	// TEST_OUTPUT("divide zero", divide_zero_test());
 	// TEST_OUTPUT("keyboard test", keyboard_test());

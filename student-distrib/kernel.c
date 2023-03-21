@@ -147,7 +147,12 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
     init_idt();
+
+    // init keyboard device to IRQ 1
+    enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
     rtc_init();
+    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
+
 
     printf("Enabling Interrupts\n");
     sti();

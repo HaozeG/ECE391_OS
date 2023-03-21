@@ -12,6 +12,8 @@ static int screen_x;
 static int screen_y;
 static char* video_mem = (char *)VIDEO;
 
+
+
 /* void clear(void);
  * Inputs: void
  * Return Value: none
@@ -478,3 +480,4 @@ void test_interrupts(void) {
         video_mem[i << 1]++;
     }
 }
+

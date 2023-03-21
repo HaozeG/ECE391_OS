@@ -95,13 +95,10 @@ void init_idt() {
     // Keyboard
     idt[KEYBOARD_VEC].present = 1;
     SET_IDT_ENTRY(idt[KEYBOARD_VEC], KEYBOARD_INTERRUPT);
-    // init keyboard device to IRQ 1
-    enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
     // RTC
-    // idt[RTC_VEC].present = 1;
-    // SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
-    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
-
+    idt[RTC_VEC].present = 1;
+    SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
+    
     lidt(idt_desc_ptr); // Load IDTR
 
 
