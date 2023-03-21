@@ -9,7 +9,8 @@
 #include "debug.h"
 #include "tests.h"
 #include "idt.h"
-#include "paging.h"
+#include "rtc.h"
+
 
 #define RUN_TESTS
 
@@ -146,10 +147,15 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
     init_idt();
-    page_init();
+    rtc_init();
 
+<<<<<<< HEAD
     printf("Enabling Interrupts\n");
     sti();
+=======
+    //printf("Enabling Interrupts\n");
+    //sti();
+>>>>>>> c948b83a8bf26857319e21f212ffcbafded23c95
 
 #ifdef RUN_TESTS
     /* Run tests */

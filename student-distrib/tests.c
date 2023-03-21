@@ -24,7 +24,7 @@ static inline void assertion_failure()
 
 /* IDT Test - Example
  *
- * Asserts that all IDT entries are not NULL; check assignment of present, size, seg_selector, dpl are correct
+ * Asserts that first 10 IDT entries are not NULL
  * Inputs: None
  * Outputs: PASS/FAIL
  * Side Effects: None
@@ -33,6 +33,20 @@ static inline void assertion_failure()
  */
 int idt_test()
 {
+	// TEST_HEADER;
+
+	// int i;
+	// int result = PASS;
+	// for (i = 0; i < 10; ++i)
+	// {
+	// 	if ((idt[i].offset_15_00 == NULL) &&
+	// 		(idt[i].offset_31_16 == NULL))
+	// 	{
+	// 		assertion_failure();
+	// 		result = FAIL;
+	// 	}
+	// }
+	// return result;
 	clear();
 	TEST_HEADER;
 
@@ -79,24 +93,6 @@ int idt_test()
 }
 
 /*
- * int test
- *   DESCRIPTION: Test certain interrupt handling
- *   INPUTS: none
- *	 OUTPUTS: none
- *   SIDE EFFECTS: stuck in loop if handled correctly
- *	Coverage: all IDT entry
- */
-int int_test() {
-	clear();
-	TEST_HEADER;
-	asm volatile("int $1");
-
-	// should never reach here
-	printf("Returned from interrupt handler!\n");
-	return 1;
-}
-
-/*
  * Divide zero test
  *   DESCRIPTION: Test exception 0
  *   INPUTS: none
@@ -106,13 +102,9 @@ int int_test() {
  */
 int divide_zero_test()
 {
-	clear();
-	TEST_HEADER;
 	int i = 0;
 	int j = 5;
 	j = 5 / i;
-	// should never reach here
-	printf("Divide zero executed!\n");
 	return 1;
 }
 
@@ -126,8 +118,6 @@ int divide_zero_test()
  */
 int syscall_test()
 {
-	clear();
-	TEST_HEADER;
 	ECE391_TEMP();
 	return 1;
 }
@@ -143,7 +133,6 @@ int syscall_test()
 int keyboard_test()
 {
 	clear();
-	TEST_HEADER;
 	do
 	{
 		// printf("here!\n");
@@ -160,9 +149,7 @@ int keyboard_test()
  *   SIDE EFFECTS: Stuck in page fault handler
  *	Coverage: IDT entry 15; Paging
  */
-int dereference_test()
-{
-	clear();
+int dereference_test() {
 	TEST_HEADER;
 	uint32_t b;
 	uint32_t *addr;
@@ -202,7 +189,21 @@ int dereference_test()
 	b = *addr;
 	// should never reach here
 	printf("FAIL! Dereferenced address 0!\n");
+	return FAIL;
+}
 
+/* RTC Interrupt test
+ *   DESCRIPTION: RTC interrupt
+ *   INPUTS: none
+ *	OUTPUTS: none
+ *   SIDE EFFECTS: stuck in dead loop
+ *	Coverage: IDT entry 0x28 (rtc vector)
+ */
+int rtc_test(){
+	clear();
+	
+
+	rtc_on();
 	return PASS;
 }
 
