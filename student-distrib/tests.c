@@ -196,8 +196,8 @@ int dereference_test() {
 	// b = *addr;
 
 	// dereference non-accessible addr 0
-	addr = (uint32_t *)0;
-	printf("Dereference addr 0\n");
+	addr = NULL;
+	printf("Dereference NULL\n");
 	b = *addr;
 	// should never reach here
 	printf("FAIL! Dereferenced address 0!\n");
