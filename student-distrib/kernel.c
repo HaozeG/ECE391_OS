@@ -149,13 +149,8 @@ void entry(unsigned long magic, unsigned long addr) {
     init_idt();
     rtc_init();
 
-<<<<<<< HEAD
     printf("Enabling Interrupts\n");
     sti();
-=======
-    //printf("Enabling Interrupts\n");
-    //sti();
->>>>>>> c948b83a8bf26857319e21f212ffcbafded23c95
 
 #ifdef RUN_TESTS
     /* Run tests */
