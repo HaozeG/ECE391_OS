@@ -148,6 +148,8 @@ void entry(unsigned long magic, unsigned long addr) {
     init_idt();
     page_init();
 
+    printf("Enabling Interrupts\n");
+    sti();
 
 #ifdef RUN_TESTS
     /* Run tests */

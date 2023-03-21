@@ -154,12 +154,11 @@ int keyboard_test()
 
 /*
  * Dereference test
- *   DESCRIPTION: Test the borders of paging
+ *   DESCRIPTION: Test the borders of paging; Test page fault exception
  *   INPUTS: none
- *	OUTPUTS: none
- *   SIDE EFFECTS: none
+ *	 OUTPUTS: none
+ *   SIDE EFFECTS: Stuck in page fault handler
  *	Coverage: IDT entry 15; Paging
-	TODO: meaning of paging??(non present, size of video memory)
  */
 int dereference_test()
 {
@@ -168,25 +167,15 @@ int dereference_test()
 	uint32_t b;
 	uint32_t *addr;
 	uint32_t i;
-	// // dereference accessible addr
-	// addr = &b;
-	// printf("Test addr %x\n", addr);
-	// b = *addr;
-
-	// // dereference non-accessible addr 0
-	// addr = (uint32_t *)0;
-	// printf("Test addr %x\n", addr);
-	// b = *addr;
-
-	// ------
 	
 	// Start of video mem
 	addr = (uint32_t *)0xB8000;
 	printf("Test addr %x\n", addr);
 	b = *addr;
 
-	for (i = 1; i < 1024; i++) {
-		addr++;
+	// Byte-addressable, but reads out 4 consecutive bytes
+	for (i = 1; i <= (4*1024 - 4); i++) {
+		addr = (uint32_t *)(0xB8000 + i);
 		printf("Test addr %x\n", addr);
 		b = *addr;
 	}
@@ -196,11 +185,24 @@ int dereference_test()
 	printf("Test addr %x\n", addr);
 	b = *addr;
 	// End of kernel page(4MB page)
-	addr = (uint32_t *)(8*1024*1024 - 1);
+	addr = (uint32_t *)(8*1024*1024 - 4);
 	printf("Test addr %x\n", addr);
 	b = *addr;
-	// // should never reach here
-	// printf("Dereferenced address 0!\n");
+
+	// ------
+
+	// // dereference accessible addr
+	// addr = &b;
+	// printf("Test addr %x\n", addr);
+	// b = *addr;
+
+	// dereference non-accessible addr 0
+	addr = (uint32_t *)0;
+	printf("Dereference addr 0\n");
+	b = *addr;
+	// should never reach here
+	printf("FAIL! Dereferenced address 0!\n");
+
 	return PASS;
 }
 
@@ -219,5 +221,4 @@ void launch_tests()
 	// TEST_OUTPUT("int_test", int_test());
 	// TEST_OUTPUT("divide zero", divide_zero_test());
 	// TEST_OUTPUT("keyboard test", keyboard_test());
-	// launch your tests here
 }

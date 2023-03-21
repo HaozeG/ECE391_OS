@@ -104,8 +104,7 @@ void init_idt() {
 
     lidt(idt_desc_ptr); // Load IDTR
 
-    printf("Enabling Interrupts\n");
-    sti();
+
 };
 
 // Syscall that print a message and stuck in loop
