@@ -2,15 +2,10 @@
 #include "x86_desc.h"
 #include "lib.h"
 #include "wrapper.h"
-#include "rtc.h"
 #include "idt.h"
-
-
-
 
 #define PASS 1
 #define FAIL 0
-uint8_t key_pressed;
 
 /* format these macros as you see fit */
 #define TEST_HEADER \
@@ -81,7 +76,6 @@ int idt_test()
 		}
 	}
 	return result;
-
 }
 
 /*
@@ -227,4 +221,3 @@ void launch_tests()
 	// TEST_OUTPUT("keyboard test", keyboard_test());
 	// launch your tests here
 }
-

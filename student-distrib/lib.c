@@ -12,9 +12,6 @@ static int screen_x;
 static int screen_y;
 static char* video_mem = (char *)VIDEO;
 
-static int rtc_switch = 0;
-
-
 /* void clear(void);
  * Inputs: void
  * Return Value: none
@@ -480,35 +477,4 @@ void test_interrupts(void) {
     for (i = 0; i < NUM_ROWS * NUM_COLS; i++) {
         video_mem[i << 1]++;
     }
-}
-/* void rtc_on(void)
- * Inputs: void
- * Return Value: void
- * Function: turns on rtc switch for rtc interrupt
-*/
-void rtc_on(void)
-{
-    rtc_switch = 1;
-    return;
-}
-
-/* void rtc_off
- * Inputs: void
- * Return Value: void
- * Function: turns off rtc switch for rtc interrupt
- */
-void rtc_off(void)
-{
-    rtc_switch = 0;
-    return;    
-}
-
-/* int get_rtc_switch(void)
- * Inputs: void
- * Return Value: rtc_switch
- * Function: return rtc_switch
- */
-int get_rtc_switch(void)
-{
-    return rtc_switch;
 }

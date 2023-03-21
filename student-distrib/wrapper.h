@@ -3,8 +3,6 @@
 
 #include "types.h"
 #include "interrupt.h"
-#include "rtc.h"
-
 
 #ifndef ASM
 
@@ -47,8 +45,6 @@ extern void ece391_temp();
 
 // wrapped keyboard handler
 extern void KEYBOARD_INTERRUPT();
-
-extern void RTC_INTERRUPT();
 
 #endif
 

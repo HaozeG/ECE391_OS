@@ -24,10 +24,11 @@ Solution:
                           BUG 2                          
 <--------------------------------------------------------->
 Time:
-    2023.3.17
+    2023.3.17.
 Creator:
-    Allen Z.
+    Haoze Gao.
 Description:
-    Paging was mapping more pages than expected.
+    "int $15" does not trigger the exception handling as expected.
 Solution:
-    Base address for the page directory for the page table was right shifted by 22 instead of 12.
+    Fix the original array of exception handlers that lacks some RESERVED
+    entries.
