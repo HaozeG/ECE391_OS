@@ -43,6 +43,7 @@
     input:  name - function name
             num - index to system call
     TODO: how to deal with pass in num
+    TODO: cli needed?
 */
 #define INTR_LINK(name,func)    \
     .GLOBL name                 ;\
@@ -107,6 +108,7 @@ EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
 
 INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
+INTR_LINK(RTC_INTERRUPT,rtc_handler)
 
 /*
     System call function for test

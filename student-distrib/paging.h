@@ -53,7 +53,7 @@ typedef struct table_entry {
     uint32_t global_page :1;
     uint32_t avail :3;
     uint32_t page_base_addr :20;
-} pte_t __attribute__((packed)); 
+} pte_t __attribute__(()); 
 
 pde_t page_directory[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB))); //remember to align to 4096
 pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
