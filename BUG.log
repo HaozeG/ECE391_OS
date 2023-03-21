@@ -44,3 +44,15 @@ Description:
     Paging was mapping more pages than expected.
 Solution:
     Base address for the page directory for the page table was right shifted by 22 instead of 12.
+
+<--------------------------------------------------------->
+                          BUG 4                          
+<--------------------------------------------------------->
+Time:
+    2022.3.20.
+Creator:
+    Haoze Gao.
+Description:
+    Screen flickers quickly but there are messages printing out as if exception occured.
+Solution:
+    SET_IDT_ENTRY should use the wrapped function instead of the unwrapped handler.
