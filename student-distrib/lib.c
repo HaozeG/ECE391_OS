@@ -12,10 +12,10 @@
 //     ||||^----fore colour bright bit
 //     |^^^-----back colour
 //     ^--------back colour bright bit OR enables blinking Text
-#define ATTRIB_FORE    0x7
-#define ATTRIB_BACK    0x1
-#define ATTRIB_BG      (ATTRIB_FORE | (ATTRIB_BACK << 4))
-#define ATTRIB_TEXT    0x8
+int8_t ATTRIB_FORE    = 0x7;
+int8_t ATTRIB_BACK    = 0x0;
+#define ATTRIB_BG      ((ATTRIB_BACK & 0x07) << 4)
+#define ATTRIB_TEXT    ((ATTRIB_FORE & 0x0F) | ((ATTRIB_BACK & 0x0F) << 4))
 
 // Cursor position on screen
 static int screen_x;
@@ -23,6 +23,21 @@ static int screen_y;
 static char* video_mem = (char *)VIDEO;
 
 void scroll();
+
+/* void set_color(int8_t attr, int8_t select);
+ * Inputs:  attr - [bright bit - 1bit][color - 3bits]
+ *          select - 0 for background, 1 for foreground
+ * Return Value: none
+ * Function: Clears video memory */
+void set_color(int8_t attr, int8_t select) {
+    if (select) {
+        // foreground
+        ATTRIB_FORE = attr & 0x0F;
+    } else {
+        // background
+        ATTRIB_BACK = attr & 0x0F;
+    }
+}
 
 /* void clear(void);
  * Inputs: void
@@ -195,7 +210,7 @@ void putc(uint8_t c) {
             scroll();
         }
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
-        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_BG;
+        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_TEXT;
         screen_x++;
         // Auto wrap(increment y before resetting x)
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;

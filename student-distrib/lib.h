@@ -7,6 +7,7 @@
 
 #include "types.h"
 
+void set_color(int8_t attr, int8_t select);
 int32_t printf(int8_t *format, ...);
 void putc(uint8_t c);
 void delc();
