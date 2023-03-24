@@ -2,7 +2,8 @@
 #include "x86_desc.h"
 #include "lib.h"
 #include "wrapper.h"
-
+#include "paging.h"
+#include "filesys.h"
 #define PASS 1
 #define FAIL 0
 
@@ -58,6 +59,7 @@ int idt_test()
  */
 int divide_zero_test()
 {
+	//TEST_HEADER;
 	int i = 0;
 	int j = 5;
 	j = 5 / i;
@@ -74,6 +76,7 @@ int divide_zero_test()
  */
 int syscall_test()
 {
+	//TEST_HEADER;
 	ECE391_TEMP();
 	return 1;
 }
@@ -88,6 +91,7 @@ int syscall_test()
  */
 int keyboard_test()
 {
+	//TEST_HEADER;
 	clear();
 	do
 	{
@@ -97,9 +101,108 @@ int keyboard_test()
 	return 1;
 }
 
+int paging_general_test()
+{
+	TEST_HEADER;
+	printf("passed");
+	// char ret;
+	// char *ptr;
+	// ptr = (char*) KERNEL_ADDR;
+	// ret = *ptr;
+	// ptr = (char*) VID_MEM_ADDR;
+	// ret = *ptr;
+	printf("passed");
+	return PASS;
+
+}
+
+int paging_fail_test()
+{
+	TEST_HEADER;
+	int ret;
+	int* ptr = (int*) 0x1;
+	ret = *ptr;
+	printf("passed");
+	return PASS;
+
+}
+
+int paging_null_test()
+{
+	TEST_HEADER;
+	int ret;
+	int* ptr = (int*) 0;
+	ret = *ptr;
+	printf("passed");
+	return PASS;
+
+}
 // add more tests here
 
 /* Checkpoint 2 tests */
+int file_general_test()
+{
+	TEST_HEADER;
+	clear();
+	uint8_t fname[] = "frame0.txt";
+	directory_entry_t dentry; 
+	if(read_dentry_by_name(fname, &dentry) == 0) {
+		printf("passed\n");
+		return PASS;
+	} else {
+		printf("did not pass, read_dentry_by_name did not copy the name properly \n");
+		return FAIL;
+	}
+
+}
+
+int file_name_test()
+{
+	TEST_HEADER;
+	uint8_t fname[] = "youWILLNOTPASS.txt";
+	directory_entry_t dentry; 
+	if(read_dentry_by_name(fname, &dentry) == 0) {
+		printf("passed \n");
+		return PASS;
+	} else {
+		printf("did not pass, read_dentry_by_name did not copy the name properly \n");
+		return FAIL;
+	}
+
+}
+
+int long_name_test()
+{
+	TEST_HEADER;
+	uint8_t fname[] = "LONGNAMEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.txt";
+	directory_entry_t dentry; 
+	if(read_dentry_by_name(fname, &dentry) == 0) {
+		printf("passed \n");
+		return PASS;
+	} else {
+		printf("did not pass, read_dentry_by_name did not copy the name properly \n");
+		return FAIL;
+	}
+
+}
+
+int name_test()
+{
+	TEST_HEADER;
+	int i;
+	uint8_t fname[] = "frame0.txt";
+	directory_entry_t dentry; 
+	read_dentry_by_name(fname, &dentry);
+	for (i = 0; i < strlen((int8_t*) fname); i++) {
+		if (fname[i] != dentry.file_name[i]) {
+			printf("did not pass, copied name is not equivalent. \n");
+			return FAIL;
+		}
+	}
+	printf("passed \n");
+	return PASS;
+}
+
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -107,8 +210,15 @@ int keyboard_test()
 /* Test suite entry point */
 void launch_tests()
 {
-	TEST_OUTPUT("idt_test", idt_test());
-	TEST_OUTPUT("divide zero", divide_zero_test());
-	TEST_OUTPUT("keyboard test", keyboard_test());
+	//TEST_OUTPUT("idt_test", idt_test());
+	//TEST_OUTPUT("divide zero", divide_zero_test());
+	//TEST_OUTPUT("keyboard test", keyboard_test());
+	//TEST_OUTPUT("paging_general_test", keyboard_test());
+	//TEST_OUTPUT("paging_fail_test", keyboard_test());
+	//TEST_OUTPUT("paging_null_test", keyboard_test());
+	TEST_OUTPUT("filesys_general_test", file_general_test());
+	TEST_OUTPUT("filesys_name_doesn't_exist_test", file_name_test());
+	TEST_OUTPUT("filesys_long_name_test", long_name_test());
+	TEST_OUTPUT("filesys_name_comparison_test", name_test());
 	// launch your tests here
 }

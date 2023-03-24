@@ -53,7 +53,7 @@ typedef struct table_entry {
     uint32_t global_page :1;
     uint32_t avail :3;
     uint32_t page_base_addr :20;
-} pte_t __attribute__((packed)); 
+}__attribute__((packed)) pte_t; 
 
 pde_t page_directory[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB))); //remember to align to 4096
 pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
@@ -61,9 +61,9 @@ pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
 
 
 extern void page_init();
-extern void loadPageDirectory(unsigned int*);
+extern void loadPageDirectory(pde_t*);
 extern void enablePaging();
 
 #endif /* ASM */
 
-#endif /* _x86_DESC_H */
+#endif /* PAGING_H */
