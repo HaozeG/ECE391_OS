@@ -7,7 +7,6 @@
 
 #define PASS 1
 #define FAIL 0
-uint8_t key_pressed;
 
 /* format these macros as you see fit */
 #define TEST_HEADER \
@@ -24,6 +23,25 @@ static inline void assertion_failure()
 
 /* Checkpoint 1 tests */
 
+/*
+ * int test
+ *   DESCRIPTION: Test certain interrupt handling
+ *   INPUTS: none
+ *	 OUTPUTS: none
+ *   SIDE EFFECTS: stuck in loop if handled correctly
+ *	Coverage: all IDT entry
+ */
+int int_test() {
+	clear();
+	TEST_HEADER;
+	asm volatile("int $1");
+
+	// should never reach here
+	printf("Returned from interrupt handler!\n");
+	return 1;
+}
+
+
 /* IDT Test - Example
  *
  * Asserts that first 10 IDT entries are not NULL
@@ -35,20 +53,6 @@ static inline void assertion_failure()
  */
 int idt_test()
 {
-	// TEST_HEADER;
-
-	// int i;
-	// int result = PASS;
-	// for (i = 0; i < 10; ++i)
-	// {
-	// 	if ((idt[i].offset_15_00 == NULL) &&
-	// 		(idt[i].offset_31_16 == NULL))
-	// 	{
-	// 		assertion_failure();
-	// 		result = FAIL;
-	// 	}
-	// }
-	// return result;
 	clear();
 	TEST_HEADER;
 
@@ -63,7 +67,7 @@ int idt_test()
 			assertion_failure();
 			result = FAIL;
 		}
-		if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC) {
+		if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == RTC_VEC || i == SYS_CALL_VEC) {
 		// if (i < NUM_EXCEPTION || i == KEYBOARD_VEC || i == SYS_CALL_VEC || i == RTC_VEC) {
 			if (idt[i].present != 1) {
 				assertion_failure();
@@ -104,6 +108,8 @@ int idt_test()
  */
 int divide_zero_test()
 {
+	clear();
+	TEST_HEADER;
 	int i = 0;
 	int j = 5;
 	j = 5 / i;
@@ -120,6 +126,8 @@ int divide_zero_test()
  */
 int syscall_test()
 {
+	clear();
+	TEST_HEADER;
 	ECE391_TEMP();
 	return 1;
 }
@@ -135,6 +143,7 @@ int syscall_test()
 int keyboard_test()
 {
 	clear();
+	TEST_HEADER;
 	do
 	{
 		// printf("here!\n");
@@ -152,6 +161,7 @@ int keyboard_test()
  *	Coverage: IDT entry 15; Paging
  */
 int dereference_test() {
+	clear();
 	TEST_HEADER;
 	uint32_t b;
 	uint32_t *addr;
@@ -186,8 +196,8 @@ int dereference_test() {
 	// b = *addr;
 
 	// dereference non-accessible addr 0
-	addr = (uint32_t *)0;
-	printf("Dereference addr 0\n");
+	addr = NULL;
+	printf("Dereference NULL\n");
 	b = *addr;
 	// should never reach here
 	printf("FAIL! Dereferenced address 0!\n");
@@ -220,7 +230,6 @@ void launch_tests()
 {
 	// TEST_OUTPUT("idt_test", idt_test());
 	// TEST_OUTPUT("dereference test", dereference_test());
-	rtc_test();
 	// TEST_OUTPUT("rtc_test", rtc_test());
 	// TEST_OUTPUT("int_test", int_test());
 	// TEST_OUTPUT("divide zero", divide_zero_test());

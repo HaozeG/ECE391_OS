@@ -10,6 +10,7 @@
 #include "tests.h"
 #include "idt.h"
 #include "rtc.h"
+#include "paging.h"
 
 
 #define RUN_TESTS
@@ -147,6 +148,7 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
     init_idt();
+    page_init();
 
     // init keyboard device to IRQ 1
     enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);

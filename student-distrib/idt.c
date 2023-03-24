@@ -97,8 +97,8 @@ void init_idt() {
     SET_IDT_ENTRY(idt[KEYBOARD_VEC], KEYBOARD_INTERRUPT);
     // RTC
     idt[RTC_VEC].present = 1;
-    SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
-    
+    SET_IDT_ENTRY(idt[RTC_VEC], RTC_INTERRUPT);
+
     lidt(idt_desc_ptr); // Load IDTR
 
 
