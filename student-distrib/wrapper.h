@@ -48,6 +48,8 @@ extern void ece391_temp();
 extern void KEYBOARD_INTERRUPT();
 extern void RTC_INTERRUPT();
 
+extern int32_t dispatch_syscall(int32_t num);
+
 #endif
 
 #endif
