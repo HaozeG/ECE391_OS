@@ -21,8 +21,93 @@ int8_t ATTRIB_BACK    = 0x0;
 static int screen_x;
 static int screen_y;
 static char* video_mem = (char *)VIDEO;
+static int prev_screen_x;
+static int prev_screen_y;
+
+// Cursor related ports and registers
+#define VGA_MISCELL 0x3C2
+#define VGA_CURSOR_PORT 0x3D4
+#define VGA_CURSOR_DATA 0x3D5
+#define REG_CURSOR_START 0x0A
+#define REG_CURSOR_END 0x0B
+#define REG_CURSOR_LOC_LOW 0x0F
+#define REG_CURSOR_LOC_HIGH 0x0E
 
 void scroll();
+
+// Cursor
+/* void cursor_enable()
+ * Inputs:  none
+ * Return Value: none
+ * Function: Set start and end scanline of cursor
+ * Ref: Osdev-Text Mode Cursor */
+void cursor_enable() {
+    // start and end scanline
+    int8_t cursor_start, cursor_end;
+    cursor_start = 14;
+    cursor_end = 15;
+    outb(REG_CURSOR_START, VGA_CURSOR_PORT);
+    // REG_CURSOR_START:
+    // bit 5: 1 for cursor disable, 0 for enable
+    // bit 4-0: cursor scan line start
+    outb((0x00 | (cursor_start & 0x1F)), VGA_CURSOR_DATA);
+    outb(REG_CURSOR_END, VGA_CURSOR_PORT);
+    // REG_CURSOR_END:
+    // bit 6-5: cursor skew
+    // bit 4-0: cursor scan line start
+    outb((0x00 | (cursor_end & 0x1F)), VGA_CURSOR_DATA);
+}
+
+/* void cursor_disable()
+ * Inputs:  none
+ * Return Value: none
+ * Function: Disable cursor
+ * Ref: Osdev-Text Mode Cursor */
+void cursor_disable() {
+    outb(REG_CURSOR_START, VGA_CURSOR_PORT);
+    // REG_CURSOR_START:
+    // bit 5: 1 for cursor disable, 0 for enable
+    outb(0x20, VGA_CURSOR_DATA);
+}
+
+/* void cursor_update()
+ * Inputs:  [x, y] - location of cursor
+ * Return Value: none
+ * Function: Update cursor position
+ * Ref: Osdev-Text Mode Cursor */
+void cursor_update(int x, int y) {
+    uint16_t pos;
+    if (x < 0 || x >= NUM_COLS || y < 0 || y >= NUM_ROWS) {
+        return;
+    }
+    pos = y * NUM_COLS + x;
+
+    outb(REG_CURSOR_LOC_LOW, VGA_CURSOR_PORT);
+    // specifies bits 7-0 of the Cursor Location field
+    outb((uint8_t)(pos & 0xFF), VGA_CURSOR_DATA);
+    outb(REG_CURSOR_LOC_HIGH, VGA_CURSOR_PORT);
+    // specifies bits 15-8 of the Cursor Location field
+    outb((uint8_t)((pos >> 8) & 0xFF), VGA_CURSOR_DATA);
+}
+
+/* uint16_t cursor_pos()
+ * Inputs:  none
+ * Return Value: pos = y * NUM_COLS + x
+ * Function: Return the cursor position
+ * Ref: Osdev-Text Mode Cursor 
+ * TODO: Not fully tested */
+uint16_t cursor_pos() {
+    uint16_t pos;
+    // bits 7-0 of cursor location field
+    outb(REG_CURSOR_LOC_LOW, VGA_CURSOR_PORT);
+    pos |= inb(VGA_CURSOR_DATA);
+    // bits 15-8 of cursor location field
+    outb(REG_CURSOR_LOC_HIGH, VGA_CURSOR_PORT);
+    pos |= inb(VGA_CURSOR_DATA) << 8;
+
+    return pos;
+}
+
 
 /* void set_color(int8_t attr, int8_t select);
  * Inputs:  attr - [bright bit - 1bit][color - 3bits]
@@ -52,6 +137,9 @@ void clear(void) {
     // reset to top left corner
     screen_x = 0;
     screen_y = 0;
+    prev_screen_x = 0;
+    prev_screen_y = 0;
+    cursor_update(screen_x, screen_y);
 }
 
 /* Standard printf().
@@ -72,7 +160,6 @@ void clear(void) {
  *       Also note: %x is the only conversion specifier that can use
  *       the "#" modifier to alter output. */
 int32_t printf(int8_t *format, ...) {
-
     /* Pointer to the format string */
     int8_t* buf = format;
 
@@ -177,6 +264,7 @@ format_char_switch:
         }
         buf++;
     }
+    cursor_update(prev_screen_x, prev_screen_y);
     return (buf - format);
 }
 
@@ -198,6 +286,8 @@ int32_t puts(int8_t* s) {
  * Return Value: void
  *  Function: Output a character to the console. Scrool screen if needed */
 void putc(uint8_t c) {
+    prev_screen_x = screen_x;
+    prev_screen_y = screen_y;
     if(c == '\n' || c == '\r') {
         if ((screen_y + 1) % NUM_ROWS == 0) {
             scroll();
@@ -211,6 +301,7 @@ void putc(uint8_t c) {
         }
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_TEXT;
+        cursor_update(screen_x, screen_y);
         screen_x++;
         // Auto wrap(increment y before resetting x)
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
@@ -238,6 +329,7 @@ void scroll() {
     // Update cursor
     if (screen_y != 0) {
         screen_y--;
+        prev_screen_y--;
     }
 }
 
@@ -247,16 +339,19 @@ void scroll() {
  *  Function: Perform backspace in the console. Only delete char currently in line buffer. 
  *           Should only called by keyboard handler*/
 void delc() {
-    if (screen_x == 0) {
-        if (screen_y != 0) {
-            screen_x = NUM_COLS - 1;    // end of row
-            screen_y--;
+    *(uint8_t *)(video_mem + ((NUM_COLS * prev_screen_y + prev_screen_x) << 1)) = ' ';
+    *(uint8_t *)(video_mem + ((NUM_COLS * prev_screen_y + prev_screen_x) << 1) + 1) = ATTRIB_BG;
+    screen_x = prev_screen_x;
+    screen_y = prev_screen_y;
+    if (prev_screen_x == 0) {
+        if (prev_screen_y != 0) {
+            prev_screen_x = NUM_COLS - 1;    // end of row
+            prev_screen_y--;
         }
     } else {
-        screen_x--;
+        prev_screen_x--;
     }
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_BG;
+    cursor_update(prev_screen_x, prev_screen_y);
 }
 
 

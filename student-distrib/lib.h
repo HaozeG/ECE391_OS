@@ -7,6 +7,12 @@
 
 #include "types.h"
 
+void cursor_enable();
+void cursor_disable();
+void cursor_update(int x, int y);
+// TODO: Not fully tested
+uint16_t cursor_pos();
+
 void set_color(int8_t attr, int8_t select);
 int32_t printf(int8_t *format, ...);
 void putc(uint8_t c);
