@@ -233,5 +233,5 @@ void launch_tests()
 	// TEST_OUTPUT("rtc_test", rtc_test());
 	// TEST_OUTPUT("int_test", int_test());
 	// TEST_OUTPUT("divide zero", divide_zero_test());
-	// TEST_OUTPUT("keyboard test", keyboard_test());
+	TEST_OUTPUT("keyboard test", keyboard_test());
 }
