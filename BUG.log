@@ -56,3 +56,28 @@ Description:
     Screen flickers quickly but there are messages printing out as if exception occured.
 Solution:
     SET_IDT_ENTRY should use the wrapped function instead of the unwrapped handler.
+
+<=========================================================>
+<=================>    BUG LOG HEADER   <=================>
+<=========================================================>
+Assignment:
+    MP3
+CheckPoint:
+    CP2
+CreateTime:
+    2023.3.25
+
+<--------------------------------------------------------->
+                          BUG 5                          
+<--------------------------------------------------------->
+Time:
+    2023.3.25.
+Creator:
+    Haoze Gao.
+Description:
+    Terminal read does not return desired value. Previous call
+    of this function would influence the result of next call.
+Solution:
+    Fix the while condition in terminal read from checking buf[i]
+    to keyboard_buffer[i](the buffer given as input).
+
