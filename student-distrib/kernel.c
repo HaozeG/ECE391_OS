@@ -11,6 +11,7 @@
 #include "idt.h"
 #include "rtc.h"
 #include "paging.h"
+#include "interrupt.h"
 
 
 #define RUN_TESTS
@@ -152,6 +153,8 @@ void entry(unsigned long magic, unsigned long addr) {
 
     // init keyboard device to IRQ 1
     enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
+    // kbd_init();
+
     rtc_init();
     // enable_irq(RTC_VEC - IRQ_BASE_VEC);
 
