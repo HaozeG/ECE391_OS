@@ -26,7 +26,7 @@ typedef struct data_block { // 4 KiB
 
 typedef struct index_node { // 4 KiB
     uint32_t length;
-    data_block_t data_blocks[1023];
+    uint32_t data_blocks[1023];
 } inode_t;
 
 typedef struct file {
@@ -44,7 +44,7 @@ directory_entry_t* direc_entry_start_ptr;
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry);
 int32_t read_dentry_by_index (uint32_t index, directory_entry_t* dentry);
 int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length);
-void filesys_init(uint32_t* filesys_addr);
+void filesys_init(uint32_t filesys_addr);
 
 int32_t read_directory(file_t* fd, void* buf, int32_t nbytes);
 

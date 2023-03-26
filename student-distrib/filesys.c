@@ -1,16 +1,19 @@
 #include "filesys.h"
 #include "lib.h"
 
-void filesys_init(uint32_t* filesys_addr) {
+void filesys_init(uint32_t filesys_addr) {
     boot_block_ptr = (boot_block_t*)filesys_addr;
-    data_start_ptr = (data_block_t*)(filesys_addr + (boot_block_ptr->num_inodes + 1)*4096);
-    inode_start_ptr = (inode_t*)(filesys_addr + 4096);
+    inode_start_ptr = (inode_t*)(boot_block_ptr+1);
+    data_start_ptr = (data_block_t*)(inode_start_ptr+boot_block_ptr->num_inodes);
     direc_entry_start_ptr = boot_block_ptr->dir_entries;
 }
 
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
     int i;
     int len = strlen((int8_t*)fname);
+    if (len > 32) {
+        len = 32;
+    }
     if (fname == 0 || dentry == 0) { // NULL check
         return -1;
     }
@@ -40,15 +43,22 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
     int bytes_left_to_read = length; 
     int buf_idx = 0;
     int bytes_read = 0;
-    inode_t* inode_b = (inode_t*)(boot_block_ptr + 1 + inode);
+    inode_t* inode_b = inode_start_ptr+inode;
     int length_of_file = inode_b->length;
+    uint32_t bnum;
+    printf("length of file: %d \n", length_of_file);
     if (inode + 1 > boot_block_ptr->num_inodes) {
         return -1; 
     }
     if (offset > length_of_file) {
         return 0; 
     }
-
+    if (length_of_file < length) {
+        bytes_left_to_read = length_of_file;
+    }
+    if (offset + length > length_of_file) {
+        bytes_left_to_read = length_of_file - offset;
+    }
     data_block_index = offset / 4096; 
     byteIndex = offset % 4096;
 
@@ -56,7 +66,8 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
         if (bytes_left_to_read == 0) {
             break; 
         } else {
-            buf[buf_idx] = inode_b->data_blocks[data_block_index].data[i];
+            buf[buf_idx] = (data_start_ptr+(inode_b->data_blocks[data_block_index]))->data[i];
+            //memcpy(buf + buf_idx, (inode_b->data_blocks[data_block_index].data) + i, 1);
             bytes_left_to_read--; 
             bytes_read++;
             buf_idx++;
@@ -68,13 +79,30 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
             if (bytes_left_to_read == 0) {
                 break;
             } else {
-                buf[buf_idx] = inode_b->data_blocks[data_block_index].data[i];
+                buf[buf_idx] = (data_start_ptr+(inode_b->data_blocks[data_block_index]))->data[i];
+                //memcpy(buf + buf_idx, (inode_b->data_blocks[data_block_index].data) + i, 1);
                 bytes_left_to_read--;
                 bytes_read++;
                 buf_idx++;
             }
         }
     }
+    
+    // for (i = 0; i < bytes_left_to_read; i++) {
+    //     if (byteIndex >= 4096) {
+    //         byteIndex = 0;
+    //         data_block_index++;
+    //     }
+    //     bnum = inode_b->data_blocks[data_block_index];
+    //     if (bnum > boot_block_ptr->num_data_blocks) {
+    //         return -1; 
+    //     }
+    //     memcpy(buf + buf_idx, ((data_start_ptr + bnum)->data) + byteIndex, 1);
+    //     buf[buf_idx] = ((data_start_ptr+bnum)->data)[byteIndex];
+    //     buf_idx++;
+    //     byteIndex++;
+    //     bytes_read++;
+    // }
     return bytes_read;
 }
 // input : a pointer to an fd entry
