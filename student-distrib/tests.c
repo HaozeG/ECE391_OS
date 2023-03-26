@@ -207,31 +207,58 @@ int dereference_test() {
 /* RTC Interrupt test
  *   DESCRIPTION: RTC interrupt
  *   INPUTS: none
- *	OUTPUTS: none
+ *  OUTPUTS: none
  *   SIDE EFFECTS: stuck in dead loop
- *	Coverage: IDT entry 0x28 (rtc vector)
+ *  Coverage: IDT entry 0x28 (rtc vector)
  */
-int rtc_test(){
-	clear();
-	rtc_on();
-	return PASS;
+// int rtc_test(){
+//  clear();
+//  rtc_on();
+//  return PASS;
+// }
+/* RTC Read/Write test
+ *   DESCRIPTION: RTC read/write test
+ *   INPUTS: none
+ *  OUTPUTS: none
+ *   SIDE EFFECTS: none
+ *  Coverage: IDT entry 0x28 (rtc vector)
+ */
+int rtc_read_write_test() {
+    clear();
+    TEST_HEADER;
+    uint32_t i;
+    uint32_t j;
+    int32_t value = 0;
+    value += rtc_open(NULL);
+    for(i = 2; i <= 1024; i*=2) {
+        value += rtc_write(NULL, &i, sizeof(uint32_t));
+        //printf("Testing: %d Hz\n[", i);
+        for(j = 0; j < i; j++) {
+            value += rtc_read(NULL, NULL, NULL);
+            printf("1");
+        }
+        clear();
+    }
+    return PASS;
 }
 
 
 // add more tests here
+
 
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
 
+
 /* Test suite entry point */
 void launch_tests()
 {
-	// TEST_OUTPUT("idt_test", idt_test());
-	// TEST_OUTPUT("dereference test", dereference_test());
-	// TEST_OUTPUT("rtc_test", rtc_test());
-	// TEST_OUTPUT("int_test", int_test());
-	// TEST_OUTPUT("divide zero", divide_zero_test());
-	// TEST_OUTPUT("keyboard test", keyboard_test());
+    // TEST_OUTPUT("idt_test", idt_test());
+    // TEST_OUTPUT("dereference test", dereference_test());
+     TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
+    // TEST_OUTPUT("int_test", int_test());
+    // TEST_OUTPUT("divide zero", divide_zero_test());
+    // TEST_OUTPUT("keyboard test", keyboard_test());
 }
