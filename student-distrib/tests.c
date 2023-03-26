@@ -218,9 +218,37 @@ int rtc_test(){
 }
 
 
-// add more tests here
-
 /* Checkpoint 2 tests */
+/* Terminal test
+ *   DESCRIPTION: Terminal related system call and keyboard handler
+ *   INPUTS: none
+ *	OUTPUTS: none
+ *   SIDE EFFECTS: stuck in loop
+ *	Coverage: system call: write, read; keyboard interrupt handler
+ */
+int terminal_test() {
+	char buffer[128];
+	int32_t i;
+	int32_t n;
+	i = 0;
+	n = 0;
+	terminal_open();
+	while (i < 5) {
+		terminal_write(0, "Enter your name>", 17);
+		n = terminal_read(0, buffer, 12);
+		if (n > 0) {
+			printf("Hi, ");
+			terminal_write(0, buffer, n);
+			printf("\n");
+			n = 0;
+		}
+		i++;
+	}
+	terminal_close(0);
+	return PASS;
+}
+
+
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -234,4 +262,5 @@ void launch_tests()
 	// TEST_OUTPUT("int_test", int_test());
 	// TEST_OUTPUT("divide zero", divide_zero_test());
 	// TEST_OUTPUT("keyboard test", keyboard_test());
+	TEST_OUTPUT("terminal test", terminal_test());
 }
