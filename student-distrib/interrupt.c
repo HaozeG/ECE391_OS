@@ -56,9 +56,11 @@ void keyboard_handler()
     if (scan_code == ENTER)
     {
         enter_buf = 1;
-        kbd_buffer[count_char] = '\n';
-        count_char++;
-        putc('\n');
+        if (count_char < MAX_BUF) {
+            kbd_buffer[count_char] = '\n';
+            count_char++;
+            putc('\n');
+        }
         return;
         // count_char = 0; done by terminal after reading kbd buffer
     }
@@ -127,7 +129,7 @@ void keyboard_handler()
             return;
         }
 
-        if (count_char >= (MAX_BUF-1) || enter_buf == 1)
+        if (count_char >= MAX_BUF || enter_buf == 1)
             return;
 
         // tab
@@ -196,7 +198,7 @@ int32_t terminal_close(int32_t fd)
  *           n_bytes - maximum bytes to copy
  *   RETURN VALUE: number of bytes copied(include \n) on success,
  *                 -1 on failure
- *   SIDE EFFECTS: Only returns until enter is pressed; last char in buf is '\n'
+ *   SIDE EFFECTS: Only returns until enter is pressed; 
  */
 int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 {
@@ -220,14 +222,12 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 
     i = 0;
     cli();
-    // MAX_BUF - 1: up to 127 characters
-    while (i < (MAX_BUF - 1) && kbd_buffer[i] != '\n' && i < n_bytes)
+    // MAX_BUF: up to 128 characters
+    while (i < MAX_BUF && i < count_char && i < n_bytes)
     {
         buf_to[i] = kbd_buffer[i];
         i++;
     }
-    // buf_to[i] = '\n';
-    // i++;
 
     // reset enter indicator
     enter_buf = 0;
@@ -242,7 +242,7 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
  *   INPUTS: fd - file descriptor
  *           buf - the buffer that is write from
  *           n_bytes - number of bytes to write
- *   RETURN VALUE: number of bytes written(does not include '\n') on success, -1 on failure
+ *   RETURN VALUE: number of bytes written(include '\n') on success, -1 on failure
  *   SIDE EFFECTS: Change content on screen
  */
 int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
@@ -256,13 +256,17 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
 
     i = 0;
     cli();
-    while (i < n_bytes && buf_from[i] != '\n')
+    if (buf_from[i] == '\n') {
+        putc('\n');
+    }
+    while (i < MAX_BUF && i < n_bytes && buf_from[i] != '\n')
     {
         putc(buf_from[i]);
         i++;
+        if (buf_from[i] == '\n') {
+            putc('\n');
+        }
     }
-    // putc('\n');
-    // i++;
 
     sti();
     return i;
