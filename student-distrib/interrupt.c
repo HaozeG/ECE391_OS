@@ -37,7 +37,7 @@ void keyboard_handler()
             // 01
             {'\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\0',
              '\0', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\0',
-             '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~','\0', 
+             '\0', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '"', '~', '\0',
              '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', '\0', '*', '\0', ' ', '\0'},
 
             // 10
@@ -49,8 +49,7 @@ void keyboard_handler()
             {'\0', '\0', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '\0',
              '\0', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '{', '}', '\0',
              '\0', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ':', '"', '~', '\0',
-             '|', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '<', '>', '?', '\0', '*', '\0', ' ', '\0'}
-        };
+             '|', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '<', '>', '?', '\0', '*', '\0', ' ', '\0'}};
 
     send_eoi(KEYBOARD_IRQ);
     scan_code = inb(KEYPORT) & 0xff; // read scan code
@@ -58,16 +57,10 @@ void keyboard_handler()
     {
         enter_buf = 1;
         kbd_buffer[count_char] = '\n';
-        kbd_buffer[count_char + 1] = '\0';
-        count_char += 2;
+        count_char++;
         putc('\n');
         return;
         // count_char = 0; done by terminal after reading kbd buffer
-    }
-    else if (scan_code == BACKSPACE)
-    {
-        handle_backspace();
-        return;
     }
     else if (scan_code == CAPS)
     {
@@ -104,7 +97,7 @@ void keyboard_handler()
         shift_r_buf = 0;
         return;
     }
-    else // normal char
+    else // normal char or tab or backspace
     {
         if (shift_l_buf == 1 || shift_r_buf == 1)
             shift_buf = 1;
@@ -127,7 +120,23 @@ void keyboard_handler()
             return;
         }
 
-        if (count_char >= 126 || enter_buf == 1)
+        // backspace
+        if (scan_code == BACKSPACE)
+        {
+            handle_backspace();
+            return;
+        }
+
+        // tab
+        if (scan_code == TAB)
+        {
+            putc('\t');
+            kbd_buffer[count_char] = '\t';
+            count_char++;
+            return;
+        }
+
+        if (count_char >= (MAX_BUF-1) || enter_buf == 1)
             return;
 
         if (ascii != 0)
@@ -149,17 +158,20 @@ void keyboard_handler()
  */
 void handle_backspace()
 {
-    if (count_char == 0) {
+    if (count_char == 0)
+    {
         return;
     }
-    delc();
+    putc('\b');
     count_char--;
+    // printf("%d", count_char);
     return;
 }
 
 // --- Terminal ---
 
-int32_t terminal_open() {
+int32_t terminal_open()
+{
     clear();
     // Clears buf
     count_char = 0;
@@ -171,31 +183,37 @@ int32_t terminal_open() {
     return 0;
 }
 
-int32_t terminal_close(int32_t fd) {
+int32_t terminal_close(int32_t fd)
+{
     return 0;
 }
 
 /*
-* terminal_read
-*   DESCRIPTION: Read from the keyboard buffer into buf. Return if enter is pressed
-*   INPUTS: fd - file descriptor
-*           buf - the buffer that is copied into
-*           n_bytes - maximum bytes to copy
-*   RETURN VALUE: number of bytes copied(include \n) on success,
-*                 -1 on failure
-*   SIDE EFFECTS: Only returns until enter is pressed; last char in buf is '\n'
-*/
-int32_t terminal_read(int32_t fd, void* buf, int32_t n_bytes) {
+ * terminal_read
+ *   DESCRIPTION: Read from the keyboard buffer into buf. Return if enter is pressed
+ *   INPUTS: fd - file descriptor
+ *           buf - the buffer that is copied into
+ *           n_bytes - maximum bytes to copy
+ *   RETURN VALUE: number of bytes copied(include \n) on success,
+ *                 -1 on failure
+ *   SIDE EFFECTS: Only returns until enter is pressed; last char in buf is '\n'
+ */
+int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
+{
     int32_t i;
-    char* buf_to = (char *)buf;
-    if (!buf_to || n_bytes > MAX_BUF) {
+    char *buf_to = (char *)buf;
+    if (!buf_to || n_bytes > MAX_BUF)
+    {
         return -1;
     }
     cli();
     // Wait until enter pressed
-    while (!enter_buf) {
+    while (!enter_buf)
+    {
         sti();
-        for (i = 0; i < 1000; i++) {}
+        for (i = 0; i < 1000; i++)
+        {
+        }
         cli();
     };
 
@@ -219,24 +237,27 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t n_bytes) {
 }
 
 /*
-* terminal_write
-*   DESCRIPTION: Write from buf to screen. 
-*   INPUTS: fd - file descriptor
-*           buf - the buffer that is write from
-*           n_bytes - number of bytes to write
-*   RETURN VALUE: number of bytes written(does not include '\n') on success, -1 on failure
-*   SIDE EFFECTS: Change content on screen
-*/
-int32_t terminal_write(int32_t fd, const void* buf, int32_t n_bytes) {
+ * terminal_write
+ *   DESCRIPTION: Write from buf to screen.
+ *   INPUTS: fd - file descriptor
+ *           buf - the buffer that is write from
+ *           n_bytes - number of bytes to write
+ *   RETURN VALUE: number of bytes written(does not include '\n') on success, -1 on failure
+ *   SIDE EFFECTS: Change content on screen
+ */
+int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
+{
     int32_t i;
-    char* buf_from = (char *)buf;
-    if (!buf_from || n_bytes > MAX_BUF) {
+    char *buf_from = (char *)buf;
+    if (!buf_from || n_bytes > MAX_BUF)
+    {
         return -1;
     }
 
     i = 0;
     cli();
-    while (i < n_bytes && buf_from[i] != '\n') {
+    while (i < n_bytes && buf_from[i] != '\n')
+    {
         putc(buf_from[i]);
         i++;
     }

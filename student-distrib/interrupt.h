@@ -20,6 +20,7 @@
 #define SHIFT_L_REL 0xAA
 #define SHIFT_R 0x36
 #define SHIFT_R_REL 0xB6
+#define TAB 0x0F
 
 #define KEYBOARD_IRQ 1
 #define KBDBUF_SIZE 128
@@ -38,14 +39,13 @@ extern void kbd_init();
 extern void keyboard_handler();
 extern void handle_backspace();
 
-
 // Initialize terminal
 extern int32_t terminal_open();
 // Clears terminal specific variables
 extern int32_t terminal_close(int32_t fd);
 // Read n_bytes char from kbd_buf into buf, return the number of bytes read
-extern int32_t terminal_read(int32_t fd, void* buf, int32_t n_bytes);
+extern int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes);
 // Write n_bytes char from buf to screen
-extern int32_t terminal_write(int32_t fd, const void* buf, int32_t n_bytes);
+extern int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes);
 
 #endif
