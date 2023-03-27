@@ -9,10 +9,15 @@
 #include "debug.h"
 #include "tests.h"
 #include "idt.h"
+<<<<<<< HEAD
+#include "paging.h"
+#include "filesys.h"
+=======
 #include "rtc.h"
 #include "paging.h"
 #include "interrupt.h"
 
+>>>>>>> 2876a5d2e4033c6a5da64b55ca8f0b9473c12b5e
 
 #define RUN_TESTS
 
@@ -26,7 +31,7 @@
 /* Check if MAGIC is valid and print the Multiboot information structure
    pointed by ADDR. */
 void entry(unsigned long magic, unsigned long addr) {
-
+    unsigned int FILE_SYS_ADDR; 
     multiboot_info_t *mbi;
     /* Clear the screen. */
     clear();
@@ -59,6 +64,7 @@ void entry(unsigned long magic, unsigned long addr) {
         int mod_count = 0;
         int i;
         module_t* mod = (module_t*)mbi->mods_addr;
+        FILE_SYS_ADDR = mod->mod_start;
         while (mod_count < mbi->mods_count) {
             printf("Module %d loaded at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_start);
             printf("Module %d ends at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_end);
@@ -149,6 +155,10 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
     init_idt();
+<<<<<<< HEAD
+    filesys_init(FILE_SYS_ADDR);
+    page_init();
+=======
     page_init();
 
     // init keyboard device to IRQ 1
@@ -158,6 +168,7 @@ void entry(unsigned long magic, unsigned long addr) {
     rtc_init();
     // enable_irq(RTC_VEC - IRQ_BASE_VEC);
 
+>>>>>>> 2876a5d2e4033c6a5da64b55ca8f0b9473c12b5e
 
     printf("Enabling Interrupts\n");
     sti();
