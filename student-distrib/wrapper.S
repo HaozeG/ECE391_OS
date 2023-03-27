@@ -1,4 +1,5 @@
 #define ASM 1
+#define MAX_SYSCALL 1
 
 /* 
     Wrapper for exception handlers
@@ -43,6 +44,7 @@
     input:  name - function name
             num - index to system call
     TODO: how to deal with pass in num
+    TODO: cli needed?
 */
 #define INTR_LINK(name,func)    \
     .GLOBL name                 ;\
@@ -57,23 +59,17 @@
 
 
 /* 
-    Wrapper for system calls function(not handler)
-    input:  name - function name
-            num - index to system call
-    TODO: how to deal with pass in num
+    Dispatcher for system calls function
+    input:  num - index to system call
 */
-
-; #define DO_CALL(name, num)       \
-;     .GLOBL name                        ;\
-;     name:   
-;         PUSHL	%EBX                    ;\
-; 	    MOVL	$0, %EAX                ;\
-; 	    MOVL	8(%ESP),%EBX            ;\
-; 	    MOVL	12(%ESP),%ECX           ;\
-; 	    MOVL	16(%ESP),%EDX           ;\
-; 	    INT	$0x80                       ;\
-; 	    POPL	%EBX                    ;\
-; 	    RET                             ;\
+.GLOBL dispatch_syscall
+dispatch_syscall:
+    cmp %eax, MAX_SYSCALL
+    jna bad_syscall
+    jmp *jumptable_syscall(, %eax, 4)
+bad_syscall:
+    mov $-1, %eax
+    ret
 
 /*
     Numbers are related to vector number defined by Intel
@@ -107,11 +103,14 @@ EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
 
 INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
+INTR_LINK(RTC_INTERRUPT,rtc_handler)
 
 /*
-    System call function for test
-    0x80: interrupt vector for system call 
+    System call jumptable
 */
 .GLOBL ECE391_TEMP
 ECE391_TEMP:
-    INT $0x80
+    int $0x80
+
+jumptable_syscall:
+    .long 0

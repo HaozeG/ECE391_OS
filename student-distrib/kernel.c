@@ -9,8 +9,15 @@
 #include "debug.h"
 #include "tests.h"
 #include "idt.h"
+<<<<<<< HEAD
 #include "paging.h"
 #include "filesys.h"
+=======
+#include "rtc.h"
+#include "paging.h"
+#include "interrupt.h"
+
+>>>>>>> 2876a5d2e4033c6a5da64b55ca8f0b9473c12b5e
 
 #define RUN_TESTS
 
@@ -148,9 +155,23 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
     init_idt();
+<<<<<<< HEAD
     filesys_init(FILE_SYS_ADDR);
     page_init();
+=======
+    page_init();
 
+    // init keyboard device to IRQ 1
+    enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
+    // kbd_init();
+
+    rtc_init();
+    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
+
+>>>>>>> 2876a5d2e4033c6a5da64b55ca8f0b9473c12b5e
+
+    printf("Enabling Interrupts\n");
+    sti();
 
 #ifdef RUN_TESTS
     /* Run tests */

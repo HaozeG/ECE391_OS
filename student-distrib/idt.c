@@ -29,6 +29,11 @@ void *exception_handlers[NUM_EXCEPTION] = {
     VIRTUALIZATION_EXCEPTION,
     CONTROL_PROTECTION_EXCEPTION,
     RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
+    RESERVED,
     HYPERVISOR_INJECTION_EXCEPTION,
     VMM_COMMUNICATION_EXCEPTION,
     SECURITY_EXCEPTION,
@@ -76,7 +81,7 @@ void init_idt() {
         // disable all
         idt[i].present = 0;
         idt[i].seg_selector = KERNEL_CS;
-        SET_IDT_ENTRY(idt[i], exception_handlers[NUM_EXCEPTION - 1]);    // Reserved handler
+        SET_IDT_ENTRY(idt[i], RESERVED);    // Reserved handler
     }
 
     // System call
@@ -90,17 +95,13 @@ void init_idt() {
     // Keyboard
     idt[KEYBOARD_VEC].present = 1;
     SET_IDT_ENTRY(idt[KEYBOARD_VEC], KEYBOARD_INTERRUPT);
-    // init keyboard device to IRQ 1
-    enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
     // RTC
-    // idt[RTC_VEC].present = 1;
-    // SET_IDT_ENTRY(idt[RTC_VEC], rtc_handler);
-    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
+    idt[RTC_VEC].present = 1;
+    SET_IDT_ENTRY(idt[RTC_VEC], RTC_INTERRUPT);
 
     lidt(idt_desc_ptr); // Load IDTR
 
-    printf("Enabling Interrupts\n");
-    sti();
+
 };
 
 // Syscall that print a message and stuck in loop
