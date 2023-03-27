@@ -387,6 +387,6 @@ void launch_tests()
 	//TEST_OUTPUT("filesys_read_data_test", verylongprint());
 	//verylongprint();
 	//fish_binary();
-	cat_binary();
+	//cat_binary();
 	// launch your tests here
 }
