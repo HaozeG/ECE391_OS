@@ -4,6 +4,7 @@
 #include "wrapper.h"
 #include "idt.h"
 #include "rtc.h"
+#include "filesys.h"
 
 #define PASS 1
 #define FAIL 0
@@ -284,10 +285,11 @@ int terminal_test()
 	i = 0;
 	n = 0;
 	terminal_open();
-	while (i < 20)
+	while (i < 10)
 	{
 		terminal_write(0, "Enter your name>", 17);
-		n = terminal_read(0, buffer, 12);
+		n = terminal_read(0, buffer, 128);
+		printf("Reading %d chars\n", n);
 		if (n > 0)
 		{
 			printf("Hi, ");
@@ -301,6 +303,7 @@ int terminal_test()
 	return PASS;
 }
 
+// Test finding a file by name
 int file_general_test()
 {
 	TEST_HEADER;
@@ -317,6 +320,7 @@ int file_general_test()
 
 }
 
+// Test 
 int file_name_test()
 {
 	TEST_HEADER;
@@ -332,6 +336,7 @@ int file_name_test()
 
 }
 
+// Test file name length limit 
 int long_name_test()
 {
 	TEST_HEADER;
@@ -347,6 +352,7 @@ int long_name_test()
 
 }
 
+// Test read_dentry_by_name
 int name_test()
 {
 	TEST_HEADER;
@@ -385,6 +391,7 @@ int entire_fish_test()
 	
 }
 
+// Test reading part of file with offset
 int partial_fish_offset_test()
 {
 	clear();
@@ -406,6 +413,7 @@ int partial_fish_offset_test()
 	
 }
 
+// Test reading part of file without offset
 int partial_fish_byteRead_test()
 {
 	clear();
@@ -447,6 +455,7 @@ int verylongname()
 	
 }
 
+// read out binary file fish 
 int fish_binary() // 36164 bytes
 {
 	clear();
@@ -523,6 +532,28 @@ int cat_binary() // 36164 bytes
 	}
 	return PASS;
 }
+
+// List out all files(including name, type and length)
+int file_listing_test() {
+	clear();
+	TEST_HEADER;
+	int i = 0;
+	directory_entry_t* p;
+	p = direc_entry_start_ptr;
+	while (p->file_name[0] != 0 && i < 63) {
+		printf("File name: ");
+		terminal_write(0, p->file_name, 32);
+		printf(" File type: %d ", p->file_type);
+		if (p->file_type == 2) {
+			printf("Length: %d\n", inode_start_ptr[p->inode_num].length);
+		} else {
+			printf("\n");
+		}
+		p++;
+		i++;
+	}
+	return PASS;
+}
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -530,24 +561,32 @@ int cat_binary() // 36164 bytes
 /* Test suite entry point */
 void launch_tests()
 {
+	char b[1];
+	int32_t fd = 0;
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("divide zero", divide_zero_test());
 	//TEST_OUTPUT("keyboard test", keyboard_test());
-	//TEST_OUTPUT("paging_general_test", keyboard_test());
+	// TEST_OUTPUT("paging_general_test", keyboard_test());
 	//TEST_OUTPUT("paging_fail_test", keyboard_test());
 	//TEST_OUTPUT("paging_null_test", keyboard_test());
-	//TEST_OUTPUT("filesys_general_test", file_general_test());
-	//TEST_OUTPUT("filesys_name_doesn't_exist_test", file_name_test());
-	//TEST_OUTPUT("filesys_long_name_test", long_name_test());
-	//TEST_OUTPUT("filesys_name_comparison_test", name_test());
-	//TEST_OUTPUT("filesys_read_data_test", entire_fish_test());
-	//TEST_OUTPUT("filesys_read_data_test", partial_fish_offset_test());
-	//TEST_OUTPUT("filesys_read_data_test", partial_fish_byteRead_test());
-	//TEST_OUTPUT("filesys_read_data_test", verylongname());
-	//TEST_OUTPUT("filesys_read_data_test", fish_binary());
+	// ---
+	TEST_OUTPUT("Terminal test", terminal_test());
+	terminal_read(fd, b, 0);
+	// TEST_OUTPUT("filesys_general_test", file_general_test());
+	// TEST_OUTPUT("filesys_name_doesn't_exist_test", file_name_test());
+	// TEST_OUTPUT("filesys_long_name_test", long_name_test());
+	// TEST_OUTPUT("filesys_name_comparison_test", name_test());
+	// TEST_OUTPUT("filesys_read_data_test", partial_fish_offset_test());
+	// TEST_OUTPUT("filesys_read_data_test", partial_fish_byteRead_test());
+	TEST_OUTPUT("filesys_read_data_test", verylongname());
+	terminal_read(fd, b, 0);
+	// TEST_OUTPUT("filesys_read_data_test", fish_binary());
+	// TEST_OUTPUT("filesys_read_data_test", cat_binary());
 	//TEST_OUTPUT("filesys_read_data_test", verylongprint());
+	TEST_OUTPUT("filesys_read_data_test", entire_fish_test());
+	terminal_read(fd, b, 0);
+	TEST_OUTPUT("Listing all files", file_listing_test());
 	//verylongprint();
 	//fish_binary();
 	//cat_binary();
-	// launch your tests here
 }

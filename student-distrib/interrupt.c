@@ -127,6 +127,9 @@ void keyboard_handler()
             return;
         }
 
+        if (count_char >= (MAX_BUF-1) || enter_buf == 1)
+            return;
+
         // tab
         if (scan_code == TAB)
         {
@@ -135,9 +138,6 @@ void keyboard_handler()
             count_char++;
             return;
         }
-
-        if (count_char >= (MAX_BUF-1) || enter_buf == 1)
-            return;
 
         if (ascii != 0)
         {
@@ -202,7 +202,7 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 {
     int32_t i;
     char *buf_to = (char *)buf;
-    if (!buf_to || n_bytes > MAX_BUF)
+    if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
     {
         return -1;
     }
@@ -211,7 +211,8 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     while (!enter_buf)
     {
         sti();
-        for (i = 0; i < 1000; i++)
+        // create delay
+        for (i = 0; i < 200; i++)
         {
         }
         cli();
@@ -223,11 +224,10 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     while (i < (MAX_BUF - 1) && kbd_buffer[i] != '\n' && i < n_bytes)
     {
         buf_to[i] = kbd_buffer[i];
-        kbd_buffer[i] = '\0';
         i++;
     }
-    buf_to[i] = '\n';
-    i++;
+    // buf_to[i] = '\n';
+    // i++;
 
     // reset enter indicator
     enter_buf = 0;
@@ -249,7 +249,7 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
 {
     int32_t i;
     char *buf_from = (char *)buf;
-    if (!buf_from || n_bytes > MAX_BUF)
+    if (!buf_from || n_bytes > MAX_BUF || n_bytes < 0)
     {
         return -1;
     }
