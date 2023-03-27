@@ -63,8 +63,8 @@ void rtc_handler(void) {
 */
 int32_t rtc_open(const uint8_t* filename)
 {
-     set_freq(2);  //setting frequency to 2Hz
-     return 0;
+    set_freq(2);  //setting frequency to 2Hz
+    return 0;
 }
 
 

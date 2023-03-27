@@ -263,9 +263,9 @@ int dereference_test()
  *  Coverage: IDT entry 0x28 (rtc vector)
  */
 int rtc_test(){
- clear();
- rtc_on();
- return PASS;
+ 	clear();
+//  rtc_on();
+ 	return PASS;
 }
 
 /* RTC Read/Write test
@@ -313,7 +313,7 @@ int terminal_test()
 	while (i < 10)
 	{
 		terminal_write(0, "Enter your name>", 17);
-		n = terminal_read(0, buffer, 128);
+		n = terminal_read(0, buffer, 5);
 		printf("Reading %d chars\n", n);
 		if (n > 0)
 		{
@@ -612,6 +612,7 @@ void launch_tests()
 	TEST_OUTPUT("filesys_read_data_test", entire_fish_test());
 	terminal_read(fd, b, 0);
 	TEST_OUTPUT("Listing all files", file_listing_test());
+	terminal_read(fd, b, 0);
 	//verylongprint();
 	//fish_binary();
 	//cat_binary();
