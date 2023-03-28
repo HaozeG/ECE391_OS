@@ -313,7 +313,7 @@ int terminal_test()
 	while (i < 10)
 	{
 		terminal_write(0, "Enter your name>", 17);
-		n = terminal_read(0, buffer, 5);
+		n = terminal_read(0, buffer, 128);
 		printf("Reading %d chars\n", n);
 		if (n > 0)
 		{

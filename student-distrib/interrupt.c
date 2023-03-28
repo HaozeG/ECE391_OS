@@ -129,7 +129,7 @@ void keyboard_handler()
             return;
         }
 
-        if (count_char >= MAX_BUF || enter_buf == 1)
+        if (count_char >= (MAX_BUF - 1) || enter_buf == 1)
             return;
 
         // tab
