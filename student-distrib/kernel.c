@@ -13,7 +13,7 @@
 #include "filesys.h"
 #include "rtc.h"
 #include "paging.h"
-#include "interrupt.h"
+#include "keyboard.h"
 
 #define RUN_TESTS
 

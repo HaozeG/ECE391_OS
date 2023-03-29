@@ -2,7 +2,7 @@
 #define WRAPPER_H
 
 #include "types.h"
-#include "interrupt.h"
+#include "keyboard.h"
 #include "rtc.h"
 
 #ifndef ASM

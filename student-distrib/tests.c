@@ -5,6 +5,7 @@
 #include "idt.h"
 #include "rtc.h"
 #include "filesys.h"
+#include "terminal.h"
 
 #define PASS 1
 #define FAIL 0
