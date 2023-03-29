@@ -57,7 +57,7 @@ void page_init() {
     page_table[VID_MEM_ADDR >> 12].read_write = 1;
     page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
     // set other fields of the pagetable
-    loadPageDirectory((unsigned int *)page_directory);
+    loadPageDirectory(page_directory);
     // clear();
     // printf("%x \n", page_directory[0]);
     // printf("%x \n", page_directory[1]);
