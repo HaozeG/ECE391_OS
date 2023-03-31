@@ -3,6 +3,7 @@
  */
 
 #include "multiboot.h"
+#include "syscall.h"
 #include "x86_desc.h"
 #include "lib.h"
 #include "i8259.h"
@@ -15,7 +16,7 @@
 #include "paging.h"
 #include "keyboard.h"
 
-#define RUN_TESTS
+// #define RUN_TESTS
 
 /* Macros. */
 /* Check if the bit BIT in FLAGS is set. */
@@ -27,7 +28,7 @@
 /* Check if MAGIC is valid and print the Multiboot information structure
    pointed by ADDR. */
 void entry(unsigned long magic, unsigned long addr) {
-    unsigned int FILE_SYS_ADDR; 
+    unsigned int FILE_SYS_ADDR;
     multiboot_info_t *mbi;
     /* Clear the screen. */
     clear();
@@ -159,9 +160,6 @@ void entry(unsigned long magic, unsigned long addr) {
     // kbd_init();
 
     rtc_init();
-    // enable_irq(RTC_VEC - IRQ_BASE_VEC);
-
-
 
     printf("Enabling Interrupts\n");
     sti();
@@ -171,7 +169,7 @@ void entry(unsigned long magic, unsigned long addr) {
     launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
-
+    sys_execute((uint8_t *)"shell");
     /* Spin (nicely, so we don't chew up cycles) */
     asm volatile (".1: hlt; jmp .1;");
 }

@@ -1,11 +1,13 @@
-#if !defined(WRAPPER_H)
-#define WRAPPER_H
+#if !defined(LINKAGE_H)
+#define LINKAGE_H
 
 #include "types.h"
 #include "keyboard.h"
 #include "rtc.h"
+#include "syscall.h"
 
 #ifndef ASM
+
 
 
 // Exception handlers
@@ -40,15 +42,14 @@ extern void RESERVED();
 // Wrapped function to invoke system call
 extern void ECE391_TEMP();
 // Wrapped system call handler
-extern void INTR_ECE391_TEMP();
-// Specific system call handler 
+extern int32_t dispatch_syscall(int32_t num);
+// Specific system call handler
 extern void ece391_temp();
 
 // wrapped keyboard handler
 extern void KEYBOARD_INTERRUPT();
 extern void RTC_INTERRUPT();
 
-extern int32_t dispatch_syscall(int32_t num);
 
 #endif
 

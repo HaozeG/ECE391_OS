@@ -1,7 +1,7 @@
 #include "idt.h"
 #include "lib.h"
 #include "x86_desc.h"
-#include "wrapper.h"
+#include "linkage.h"
 
 
 // Array of function addresses for SET_IDT_ENTRY
@@ -47,7 +47,7 @@ void *exception_handlers[NUM_EXCEPTION] = {
 *               can be modified here.
 *   INPUTS: none
 *   RETURN VALUE: none
-*   SIDE EFFECTS: All entries reserved by Intel are set with a handler 
+*   SIDE EFFECTS: All entries reserved by Intel are set with a handler
 *           that outputs "Reserved" message;
 */
 void init_idt() {
@@ -89,7 +89,7 @@ void init_idt() {
     idt[SYS_CALL_VEC].dpl = 3;
     // enable
     idt[SYS_CALL_VEC].present = 1;
-    SET_IDT_ENTRY(idt[SYS_CALL_VEC], INTR_ECE391_TEMP);
+    SET_IDT_ENTRY(idt[SYS_CALL_VEC], dispatch_syscall);
 
     // Interrupts
     // Keyboard
