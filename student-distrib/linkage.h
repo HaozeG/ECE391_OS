@@ -50,6 +50,8 @@ extern void ece391_temp();
 extern void KEYBOARD_INTERRUPT();
 extern void RTC_INTERRUPT();
 
+int32_t dummy;  // not used
+
 
 #endif
 

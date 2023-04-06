@@ -13,10 +13,9 @@
 #include "paging.h"
 #include "filesys.h"
 #include "rtc.h"
-#include "paging.h"
 #include "keyboard.h"
 
-// #define RUN_TESTS
+#define RUN_TESTS
 
 /* Macros. */
 /* Check if the bit BIT in FLAGS is set. */
@@ -153,7 +152,7 @@ void entry(unsigned long magic, unsigned long addr) {
      * PIC, any other initialization stuff... */
     init_idt();
     filesys_init(FILE_SYS_ADDR);
-    page_init();
+    page_init(0);
 
     // init keyboard device to IRQ 1
     enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);

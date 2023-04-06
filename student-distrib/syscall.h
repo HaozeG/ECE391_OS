@@ -1,6 +1,7 @@
 #ifndef SYSCALL_H_
 #define SYSCALL_H_
 #include "lib.h"
+#include "filesys.h"
 
 // System call numbers
 #define SYS_HALT    1
@@ -25,5 +26,12 @@ extern int32_t sys_getargs(uint8_t* buf, int32_t n_bytes);
 extern int32_t sys_vidmap(uint8_t** screen_start);
 extern int32_t sys_set_handler(int32_t signum, void* handler_address);
 extern int32_t sys_sigreturn(void);
+
+typedef struct {
+    file_t fd[8];
+} fd_array;
+
+// PCB
+
 
 #endif

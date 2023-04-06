@@ -8,6 +8,7 @@
             num - interrupt vector
     Without error code: use 0 as error code
 */
+// TODO: do not restore eax
 #define EXCEPT_LINK(name, func, num)   \
     .GLOBL name                       ;\
     name:                             ;\
@@ -28,7 +29,7 @@
 #define EXCEPT_LINK_ERRORCODE(name, func, num)   \
     .GLOBL name                     ;\
     name:                           ;\
-        xchgl %eax,4(%esp)          ;\
+        xchgl %eax,(%esp)          ;\
         pushal                      ;\
         pushfl                      ;\
         pushl %eax                  ;\
@@ -62,8 +63,8 @@
 */
 .GLOBL dispatch_syscall
 dispatch_syscall:
-    // check for valid system call number [1, 10]
-    cmp %eax, $1
+    /* check for valid system call number [1, 10] */
+    cmp %eax, 1
     jg bad_syscall
     cmp %eax, MAX_SYSCALL
     jl bad_syscall
