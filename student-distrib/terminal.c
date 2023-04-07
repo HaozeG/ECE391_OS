@@ -36,7 +36,8 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 {
     int32_t i;
     char *buf_to = (char *)buf;
-    if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
+    // if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
+    if (!buf_to || n_bytes < 0)
     {
         return -1;
     }
