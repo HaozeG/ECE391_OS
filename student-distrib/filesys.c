@@ -83,7 +83,7 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
     inode_t* inode_b = inode_start_ptr+inode; // the pointer to the inode to our file. 
     int length_of_file = inode_b->length; 
     // uint32_t bnum; // the data block number. 
-    printf("length of file: %d \n", length_of_file);
+    // printf("length of file: %d \n", length_of_file);
     if (inode + 1 > boot_block_ptr->num_inodes) { // is the inode valid check.
         return -1; 
     }

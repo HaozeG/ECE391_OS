@@ -137,13 +137,13 @@ int divide_zero_test()
  *   SIDE EFFECTS: stuck in loop if handled correctly
  *	Coverage: IDT entry 0x80(system call)
  */
-int syscall_test()
-{
-	clear();
-	TEST_HEADER;
-	ECE391_TEMP();
-	return 1;
-}
+// int syscall_test()
+// {
+// 	clear();
+// 	TEST_HEADER;
+// 	ECE391_TEMP();
+// 	return 1;
+// }
 
 /*
  * Keyboard Interrupt test

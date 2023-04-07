@@ -103,10 +103,3 @@ void init_idt() {
 
 
 };
-
-// Syscall that print a message and stuck in loop
-void ece391_temp () {
-    printf("SYSCALL! STUCK IN LOOP...\n");
-    do {
-    }while (1);
-};

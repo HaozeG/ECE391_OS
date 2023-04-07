@@ -64,10 +64,10 @@
 .GLOBL dispatch_syscall
 dispatch_syscall:
     /* check for valid system call number [1, 10] */
-    cmp %eax, 1
-    jg bad_syscall
-    cmp %eax, MAX_SYSCALL
-    jl bad_syscall
+    cmp $1, %eax
+    jng bad_syscall
+    cmp $MAX_SYSCALL, %eax
+    jnl bad_syscall
     // save registers to stack
     pushl %ebp
     pushl %edi
@@ -120,15 +120,8 @@ EXCEPT_LINK_ERRORCODE(VMM_COMMUNICATION_EXCEPTION, common_exception_handler, 29)
 EXCEPT_LINK_ERRORCODE(SECURITY_EXCEPTION, common_exception_handler, 30)
 EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
-INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
-
 INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
 INTR_LINK(RTC_INTERRUPT,rtc_handler)
-
-.GLOBL ECE391_TEMP
-ECE391_TEMP:
-
-    int $0x80
 
 /*
     System call jumptable

@@ -39,12 +39,9 @@ extern void VMM_COMMUNICATION_EXCEPTION();
 extern void SECURITY_EXCEPTION();
 extern void RESERVED();
 
-// Wrapped function to invoke system call
-extern void ECE391_TEMP();
+
 // Wrapped system call handler
 extern int32_t dispatch_syscall(int32_t num);
-// Specific system call handler
-extern void ece391_temp();
 
 // wrapped keyboard handler
 extern void KEYBOARD_INTERRUPT();

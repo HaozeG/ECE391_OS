@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "filesys.h"
 
+#define SYSCALL_FAIL -1
 // System call numbers
 #define SYS_HALT    1
 #define SYS_EXECUTE 2
@@ -27,11 +28,14 @@ extern int32_t sys_vidmap(uint8_t** screen_start);
 extern int32_t sys_set_handler(int32_t signum, void* handler_address);
 extern int32_t sys_sigreturn(void);
 
+int32_t program_loader(uint32_t inode);
+
+// PCB - start of 8KB
 typedef struct {
     file_t fd[8];
-} fd_array;
-
-// PCB
-
+    uint32_t parent_pid;
+    uint32_t saved_esp;
+    uint32_t saved_ebp;
+} pcb_t;
 
 #endif
