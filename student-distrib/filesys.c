@@ -28,8 +28,8 @@ void filesys_init(uint32_t filesys_addr) {
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
     int i;
     int len = strlen((int8_t*)fname);
-    if (len > 32) { // if the length of the file name is longer than the max, set to check only the max length allowed.
-        len = 32;
+    if (len > 32) { // if the length of the file name is longer than the max, it cannot exist in our filesystem.
+        return -1;
     }
     if (fname == 0 || dentry == 0) { // NULL check
         return -1;
