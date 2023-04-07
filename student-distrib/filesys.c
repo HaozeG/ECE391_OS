@@ -28,7 +28,11 @@ void filesys_init(uint32_t filesys_addr) {
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
     int i;
     int len = strlen((int8_t*)fname);
+<<<<<<< HEAD
     if (len > 32) { // if the length of the file name is longer than the max, it cannot exist in our filesystem.
+=======
+    if (len > 32) { // if the length of the file name is longer than the max, set to check only the max length allowed.
+>>>>>>> 14e39a49feb3cc90a38eb38c357ed2475b651797
         return -1;
     }
     if (fname == 0 || dentry == 0) { // NULL check
@@ -83,7 +87,7 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
     inode_t* inode_b = inode_start_ptr+inode; // the pointer to the inode to our file. 
     int length_of_file = inode_b->length; 
     // uint32_t bnum; // the data block number. 
-    printf("length of file: %d \n", length_of_file);
+    // printf("length of file: %d \n", length_of_file);
     if (inode + 1 > boot_block_ptr->num_inodes) { // is the inode valid check.
         return -1; 
     }

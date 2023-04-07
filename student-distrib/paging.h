@@ -2,10 +2,13 @@
 #define PAGING_H
 #include "types.h"
 
+#define NUM_PROCESS_MAX 6
+
 #define PAGE_SIZE 1024
 #define ALIGNMENT4KIB 4096
 #define VID_MEM_ADDR 0xB8000
 #define KERNEL_ADDR 0x400000
+#define USER_ADDR_VIRTUAL 0x8000000 // start at 128MB
 #ifndef ASM
 
 typedef union direc_entry {
@@ -55,12 +58,19 @@ typedef struct table_entry {
     uint32_t page_base_addr :20;
 }__attribute__((packed)) pte_t; 
 
-pde_t page_directory[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB))); //remember to align to 4096
-pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
+// pack up pd, pt for each process
+typedef struct {
+    pde_t page_directory[PAGE_SIZE];
+    pte_t page_table[PAGE_SIZE];
+}__attribute__((packed)) process_paging_t;
+
+process_paging_t process_paging[NUM_PROCESS_MAX] __attribute__((aligned(ALIGNMENT4KIB)));
+// pde_t page_directory[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB))); //remember to align to 4096
+// pte_t page_table[PAGE_SIZE] __attribute__ ((aligned(ALIGNMENT4KIB)));
 
 
 
-extern void page_init();
+extern void page_init(uint32_t pid);
 extern void loadPageDirectory(pde_t*);
 extern void enablePaging();
 

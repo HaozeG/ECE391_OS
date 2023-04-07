@@ -30,13 +30,14 @@ int32_t terminal_close(int32_t fd)
  *           n_bytes - maximum bytes to copy
  *   RETURN VALUE: number of bytes copied(include \n) on success,
  *                 -1 on failure
- *   SIDE EFFECTS: Only returns until enter is pressed; 
+ *   SIDE EFFECTS: Only returns until enter is pressed;
  */
 int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 {
     int32_t i;
     char *buf_to = (char *)buf;
-    if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
+    // if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
+    if (!buf_to || n_bytes < 0)
     {
         return -1;
     }

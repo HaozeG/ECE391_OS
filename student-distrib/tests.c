@@ -1,7 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
-#include "wrapper.h"
+#include "linkage.h"
 #include "idt.h"
 #include "rtc.h"
 #include "filesys.h"
@@ -137,13 +137,13 @@ int divide_zero_test()
  *   SIDE EFFECTS: stuck in loop if handled correctly
  *	Coverage: IDT entry 0x80(system call)
  */
-int syscall_test()
-{
-	clear();
-	TEST_HEADER;
-	ECE391_TEMP();
-	return 1;
-}
+// int syscall_test()
+// {
+// 	clear();
+// 	TEST_HEADER;
+// 	ECE391_TEMP();
+// 	return 1;
+// }
 
 /*
  * Keyboard Interrupt test
@@ -335,7 +335,7 @@ int file_general_test()
 	TEST_HEADER;
 	clear();
 	uint8_t fname[] = "frame0.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	if(read_dentry_by_name(fname, &dentry) == 0) {
 		printf("passed\n");
 		return PASS;
@@ -346,12 +346,12 @@ int file_general_test()
 
 }
 
-// Test 
+// Test
 int file_name_test()
 {
 	TEST_HEADER;
 	uint8_t fname[] = "youWILLNOTPASS.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	if(read_dentry_by_name(fname, &dentry) == 0) {
 		printf("passed \n");
 		return PASS;
@@ -362,12 +362,12 @@ int file_name_test()
 
 }
 
-// Test file name length limit 
+// Test file name length limit
 int long_name_test()
 {
 	TEST_HEADER;
 	uint8_t fname[] = "LONGNAMEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	if(read_dentry_by_name(fname, &dentry) == 0) {
 		printf("passed \n");
 		return PASS;
@@ -384,7 +384,7 @@ int name_test()
 	TEST_HEADER;
 	int i;
 	uint8_t fname[] = "frame0.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	for (i = 0; i < strlen((int8_t*) fname); i++) {
 		if (fname[i] != dentry.file_name[i]) {
@@ -404,7 +404,7 @@ int entire_fish_test()
 	int res;
 	uint8_t buf[200];
 	uint8_t fname[] = "frame0.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 0, buf, 200);
 	printf("bytes read: %d \n", res);
@@ -414,7 +414,7 @@ int entire_fish_test()
 		printf("%c", buf[i]);
 	}
 	return PASS;
-	
+
 }
 
 // Test reading part of file with offset
@@ -426,7 +426,7 @@ int partial_fish_offset_test()
 	int res;
 	uint8_t buf[200];
 	uint8_t fname[] = "frame0.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 60, buf, 200);
 	printf("bytes read: %d \n", res);
@@ -436,7 +436,7 @@ int partial_fish_offset_test()
 		printf("%c", buf[i]);
 	}
 	return PASS;
-	
+
 }
 
 // Test reading part of file without offset
@@ -448,7 +448,7 @@ int partial_fish_byteRead_test()
 	int res;
 	uint8_t buf[200];
 	uint8_t fname[] = "frame0.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 0, buf, 100);
 	printf("bytes read: %d \n", res);
@@ -458,7 +458,7 @@ int partial_fish_byteRead_test()
 		printf("%c", buf[i]);
 	}
 	return PASS;
-	
+
 }
 
 int verylongname()
@@ -467,7 +467,7 @@ int verylongname()
 	TEST_HEADER;
 	int i;
 	uint8_t fname[] = "verylargetextwithverylongname.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	if(read_dentry_by_name(fname, &dentry) == 0) {
 		printf("passed\n");
 		for (i = 0; i < 32; i++) {
@@ -478,10 +478,10 @@ int verylongname()
 		printf("did not pass, read_dentry_by_name did not copy the name properly \n");
 		return FAIL;
 	}
-	
+
 }
 
-// read out binary file fish 
+// read out binary file fish
 int fish_binary() // 36164 bytes
 {
 	clear();
@@ -490,7 +490,7 @@ int fish_binary() // 36164 bytes
 	int res;
 	uint8_t buf[40000];
 	uint8_t fname[] = "fish";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 4096, buf, 48);
 	// printf("bytes read: %d \n", res);
@@ -518,7 +518,7 @@ int verylongprint() // verylong file should have 5277 bytes of information
 	int res;
 	uint8_t buf[5500];
 	uint8_t fname[] = "verylargetextwithverylongname.txt";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 5200, buf, 5500);
 	printf("bytes read: %d \n", res);
@@ -539,7 +539,7 @@ int cat_binary() // 36164 bytes
 	int res;
 	uint8_t buf[40000];
 	uint8_t fname[] = "cat";
-	directory_entry_t dentry; 
+	directory_entry_t dentry;
 	read_dentry_by_name(fname, &dentry);
 	res = read_data(dentry.inode_num, 0x1520, buf, 1000);
 	// printf("bytes read: %d \n", res);

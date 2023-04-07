@@ -1,13 +1,14 @@
 #define ASM 1
-#define MAX_SYSCALL 1
+#define MAX_SYSCALL 10
 
-/* 
+/*
     Wrapper for exception handlers
     input:  name - function name
             func - handler function
             num - interrupt vector
     Without error code: use 0 as error code
-*/    
+*/
+// TODO: do not restore eax
 #define EXCEPT_LINK(name, func, num)   \
     .GLOBL name                       ;\
     name:                             ;\
@@ -21,14 +22,14 @@
         popal                        ;\
         iret                        ;\
 
-/*  
+/*
     With error code already on stack
-    Ref: Linux 0.11 source code 
+    Ref: Linux 0.11 source code
 */
 #define EXCEPT_LINK_ERRORCODE(name, func, num)   \
     .GLOBL name                     ;\
     name:                           ;\
-        xchgl %eax,4(%esp)          ;\
+        xchgl %eax,(%esp)          ;\
         pushal                      ;\
         pushfl                      ;\
         pushl %eax                  ;\
@@ -39,37 +40,56 @@
         popal                     ;\
         iret                      ;\
 
-/* 
+/*
     Wrapper for interrupts(not handler)
     input:  name - function name
             num - index to system call
-    TODO: how to deal with pass in num
-    TODO: cli needed?
 */
 #define INTR_LINK(name,func)    \
     .GLOBL name                 ;\
     name:                       ;\
         pushal                  ;\
         pushfl                  ;\
-        cli                     ;\
         call func               ;\
         popfl                   ;\
         popal                   ;\
         iret                    ;\
 
 
-/* 
+/*
     Dispatcher for system calls function
-    input:  num - index to system call
+    Handler for IDT[0x80]. Inputs stored in eax, ebx, ecx, edx
+    Return: -1 for error
 */
 .GLOBL dispatch_syscall
 dispatch_syscall:
-    cmp %eax, MAX_SYSCALL
-    jna bad_syscall
-    jmp *jumptable_syscall(, %eax, 4)
+    /* check for valid system call number [1, 10] */
+    cmp $1, %eax
+    jng bad_syscall
+    cmp $MAX_SYSCALL, %eax
+    jnl bad_syscall
+    // save registers to stack
+    pushl %ebp
+    pushl %edi
+    pushl %esi
+    pushfl
+    // order input values
+    pushl %edx
+    pushl %ecx
+    pushl %ebx
+    call *jumptable_syscall(, %eax, 4)
+    // restore
+    popl %ebx
+    popl %ecx
+    popl %edx
+    popfl
+    popl %esi
+    popl %edi
+    popl %ebp
+    iret
 bad_syscall:
     mov $-1, %eax
-    ret
+    iret
 
 /*
     Numbers are related to vector number defined by Intel
@@ -100,17 +120,11 @@ EXCEPT_LINK_ERRORCODE(VMM_COMMUNICATION_EXCEPTION, common_exception_handler, 29)
 EXCEPT_LINK_ERRORCODE(SECURITY_EXCEPTION, common_exception_handler, 30)
 EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
-INTR_LINK(INTR_ECE391_TEMP, ece391_temp)
-
 INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
 INTR_LINK(RTC_INTERRUPT,rtc_handler)
 
 /*
     System call jumptable
 */
-.GLOBL ECE391_TEMP
-ECE391_TEMP:
-    int $0x80
-
 jumptable_syscall:
-    .long 0
+    .long dummy, sys_halt, sys_execute, sys_read, sys_write, sys_open, sys_close, sys_getargs, sys_vidmap, sys_set_handler, sys_sigreturn

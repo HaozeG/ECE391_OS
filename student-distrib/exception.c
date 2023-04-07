@@ -81,8 +81,8 @@ void common_exception_handler(int32_t num, int32_t error_code) {
                 printf("- caused by INSTRUCTION FETCH\n");
             }
             asm volatile ("movl %%cr2, %0"   \
+                :  "=r"(error_address)        \
                 :                           \
-                : "r"(error_address)        \
                 : "memory"                  \
             );
             printf("- Error virtual address: 0x%x\n", error_address);
