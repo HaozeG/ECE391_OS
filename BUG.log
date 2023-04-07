@@ -81,3 +81,25 @@ Solution:
     Fix the while condition in terminal read from checking buf[i]
     to keyboard_buffer[i](the buffer given as input).
 
+<=========================================================>
+<=================>    BUG LOG HEADER   <=================>
+<=========================================================>
+Assignment:
+    MP3
+CheckPoint:
+    CP3
+CreateTime:
+    2023.4.7
+
+<--------------------------------------------------------->
+                          BUG 6                          
+<--------------------------------------------------------->
+Time:
+    2022.4.7.
+Creator:
+    Haoze Gao.
+Description:
+    Page fault after going to the new user program.
+Solution:
+    Add $ when doing cmp in system call handler.
+
