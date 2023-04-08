@@ -29,13 +29,6 @@ typedef struct index_node { // 4 KiB
     uint32_t data_blocks[1023];
 } inode_t;
 
-typedef struct file { // temporary file descriptor structure for the read file and read directory functions. 
-    uint32_t file_operations_table_pointer;
-    uint32_t inode;
-    uint32_t file_position;
-    uint32_t flags;
-} file_t;
-
 boot_block_t* boot_block_ptr; // global pointers to important locations
 data_block_t* data_start_ptr;
 inode_t* inode_start_ptr;
@@ -48,7 +41,7 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
 void filesys_init(uint32_t filesys_addr);
 
 // directory related functions
-int32_t read_directory(file_t* fd, void* buf, int32_t nbytes);
+int32_t read_directory(int32_t fd, void* buf, int32_t nbytes);
 
 int32_t open_directory(const uint8_t* filename);
 
@@ -57,7 +50,7 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes);
 int32_t close_directory(int32_t fd);
 
 // file related functions
-int32_t read_file(file_t* fd, void* buf, int32_t nbytes);
+int32_t read_file(int32_t fd, void* buf, int32_t nbytes);
 
 int32_t open_file(const uint8_t* filename);
 
