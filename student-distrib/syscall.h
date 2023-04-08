@@ -27,15 +27,38 @@ extern int32_t sys_getargs(uint8_t* buf, int32_t n_bytes);
 extern int32_t sys_vidmap(uint8_t** screen_start);
 extern int32_t sys_set_handler(int32_t signum, void* handler_address);
 extern int32_t sys_sigreturn(void);
+extern uint32_t current_pid;
 
 int32_t program_loader(uint32_t inode);
 
+typedef struct file_operation_table {
+    int32_t (*open)(const uint8_t* filename); 
+    int32_t (*read)(int32_t fd, void* buf, int32_t nbytes);
+    int32_t (*write)(int32_t fd, const void* buf, int32_t nbytes);
+    int32_t (*close)(int32_t fd); 
+} fot_t;
+
+typedef struct file_descriptor { 
+    fot_t* file_operations_table_pointer;
+    uint32_t inode;
+    uint32_t file_position;
+    uint32_t flags;
+} fd_t;
+
 // PCB - start of 8KB
 typedef struct {
-    file_t fd[8];
+    fd_t fd[8];
+    uint32_t pid; 
     uint32_t parent_pid;
     uint32_t saved_esp;
     uint32_t saved_ebp;
 } pcb_t;
+
+
+int32_t open(const uint8_t* filename);
+int32_t read(int32_t fd, void* buf, int32_t nbytes);
+int32_t write(int32_t fd, const void* buf, int32_t nbytes);
+int32_t close(int32_t fd); 
+pcb_t* get_pcb_ptr();
 
 #endif

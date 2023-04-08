@@ -5,6 +5,7 @@
 #include "paging.h"
 #include "keyboard.h"
 #include "terminal.h"
+#include "rtc.h"
 
 // variable to know which is current process
 uint32_t current_pid = 0;
@@ -19,13 +20,14 @@ uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};
 
 // pointer to a table of file operations
 static uint32_t *std_table[] = {(uint32_t *)terminal_open, (uint32_t *)terminal_close, (uint32_t *)terminal_read, (uint32_t *)terminal_write};
-
+static uint32_t *file_table[] = {(uint32_t *)open_file, (uint32_t *)close_file, (uint32_t *)read_file, (uint32_t *)write_file};
+static uint32_t *dir_table[] = {(uint32_t *)open_directory, (uint32_t *)close_directory, (uint32_t *)read_directory, (uint32_t *)write_directory};
+static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (uint32_t *)rtc_read, (uint32_t *)rtc_write};
 
 // do not halt process 0
 int32_t sys_halt(uint8_t status) {
     return 0;
 }
-
 /*
 * sys_execute
 *   DESCRIPTION: Execute program based on input command
@@ -100,11 +102,11 @@ int32_t sys_execute(const uint8_t* command) {
     pcb_array[new_pid].fd[0].flags = 1;
     pcb_array[new_pid].fd[0].file_position = 0;
     pcb_array[new_pid].fd[0].inode = 0;
-    pcb_array[new_pid].fd[0].file_operations_table_pointer = (uint32_t)std_table;
+    pcb_array[new_pid].fd[0].file_operations_table_pointer = (fot_t*)std_table;
     pcb_array[new_pid].fd[1].flags = 1;
     pcb_array[new_pid].fd[1].file_position = 0;
     pcb_array[new_pid].fd[1].inode = 0;
-    pcb_array[new_pid].fd[1].file_operations_table_pointer = (uint32_t)std_table;
+    pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)std_table;
     
     register uint32_t saved_ebp asm("ebp");
     register uint32_t saved_esp asm("esp");
@@ -148,19 +150,60 @@ int32_t sys_execute(const uint8_t* command) {
 }
 
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
-    return 0;
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    if (fd < 2 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
+        return -1; 
+    }
+    return pcb_ptr->fd[fd].file_operations_table_pointer->read(fd, buf, nbytes);
 };
 
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
-    return 0;
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    if (fd < 2 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
+        return -1; 
+    }
+    return pcb_ptr->fd[fd].file_operations_table_pointer->write(fd, buf, nbytes);
 };
 
 int32_t sys_open(const uint8_t* filename) {
-    return 0;
+    directory_entry_t dentry;
+    int i;
+    if (filename == 0 || read_dentry_by_name(filename, &dentry) == -1) {
+        return -1; 
+    }
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    for (i = 2; i < 8; i++) {
+        if(pcb_ptr->fd[i].flags == 0) {
+            pcb_ptr->fd[i].flags = 1; // busy
+            pcb_ptr->fd[i].inode = dentry.inode_num;
+            pcb_ptr->fd[i].file_position = 0;
+            
+            if(dentry.file_type == 0) { // rtc
+                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(rtc_table);
+            } else if (dentry.file_type == 1) { // directory
+                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(dir_table);
+            } else if (dentry.file_type == 2) { // regular file
+                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(file_table);
+            }
+            
+            return i; // return the file descriptor upon successful initialization
+        }  
+    }
+    return -1; // no open slot in the fd array
 };
 
 int32_t sys_close(int32_t fd) {
-    return 0;
+    if (fd < 2 || fd > 7) {
+        return -1;
+    }
+    pcb_t* pcb_ptr = (pcb_t*)(0x00800000 - (current_pid + 1) * 0x2000);
+    if (pcb_ptr->fd[fd].flags == 0) {
+        return -1; // cannot close unopened file 
+    }
+    pcb_ptr->fd[fd].flags = 0;
+    pcb_ptr->fd[fd].file_position = 0; // might not be needed since when you open a file, you init these values. 
+    pcb_ptr->fd[fd].inode = 0; 
+    return pcb_ptr->fd[fd].file_operations_table_pointer->close(fd);
 };
 
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
