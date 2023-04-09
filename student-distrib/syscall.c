@@ -34,6 +34,7 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 int32_t sys_halt(uint8_t status) {
     // do not halt process 0 or 1
     if (current_pid == 0 || current_pid == 1) {
+        printf("--RESTART BASE SHELL--\n");
         // restart shell
         pid_array[current_pid] = 0;
         sys_execute((uint8_t *)"shell \n");
@@ -129,9 +130,6 @@ int32_t sys_execute(const uint8_t* command) {
         arg[0] = '\0';
     }
 
-
-    // TODO: call getarg
-
     directory_entry_t dentry;
     // search for command in file system
     if (read_dentry_by_name(cmd, &dentry) != 0) {
@@ -163,6 +161,7 @@ int32_t sys_execute(const uint8_t* command) {
         return SYSCALL_FAIL;
     }
 
+    cli();
     // set up paging
     page_init(new_pid);
     // TLB flush
@@ -182,6 +181,7 @@ int32_t sys_execute(const uint8_t* command) {
         page_init(current_pid);
         // clear pid in pid array
         pid_array[new_pid] = 0;
+        sti();
         return SYSCALL_FAIL;
     }
 
@@ -215,7 +215,7 @@ int32_t sys_execute(const uint8_t* command) {
     int32_t arg_len = (int32_t)strlen ((int8_t *)arg);
     strncpy ((int8_t *)pcb_array[current_pid].args, (int8_t *)arg, (uint32_t)arg_len);
 
-
+    sti();
     // context switch
     // push context on stack
     // eip = prog_eip
@@ -355,6 +355,9 @@ int32_t sys_vidmap(uint8_t** screen_start) {
 };
 
 int32_t sys_set_handler(int32_t signum, void* handler_address) {
+    if (signum < 0 || signum >= NUM_VEC || handler_address == 0) {
+        return -1;
+    }
     return 0;
 };
 
