@@ -146,7 +146,6 @@ int32_t read_directory(int32_t fd, void* buf, int32_t nbytes) { // write all fil
     if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, &dentry) < 0) {
         return -1;
     }
-    // TODO: wrong implementation!
     uint32_t bytes_read = (uint32_t)strncpy((int8_t *)buf, (int8_t *)dentry.file_name, 32);
     pcb_ptr->fd[fd].file_position++;
     

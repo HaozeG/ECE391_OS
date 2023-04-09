@@ -256,8 +256,7 @@ int32_t sys_execute(const uint8_t* command) {
 *   SIDE EFFECTS: 
 */
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
-    // pcb_t* pcb_ptr = get_pcb_ptr();
-    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    pcb_t* pcb_ptr = get_pcb_ptr();
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return -1;
     }
@@ -274,8 +273,7 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
 *   SIDE EFFECTS: 
 */
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
-    // pcb_t* pcb_ptr = get_pcb_ptr();
-    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    pcb_t* pcb_ptr = get_pcb_ptr();
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return -1;
     }
@@ -295,8 +293,7 @@ int32_t sys_open(const uint8_t* filename) {
     if (filename == 0 || read_dentry_by_name(filename, &dentry) == -1) {
         return -1;
     }
-    // pcb_t* pcb_ptr = get_pcb_ptr();
-    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    pcb_t* pcb_ptr = get_pcb_ptr();
     for (i = 2; i < 8; i++) {
         if(pcb_ptr->fd[i].flags == 0) {
             pcb_ptr->fd[i].flags = 1; // busy
@@ -328,8 +325,7 @@ int32_t sys_close(int32_t fd) {
     if (fd < 2 || fd > 7) {
         return -1;
     }
-    // pcb_t* pcb_ptr = get_pcb_ptr();
-    pcb_t* pcb_ptr = (pcb_t*)(0x00800000 - (current_pid + 1) * 0x2000);
+    pcb_t* pcb_ptr = get_pcb_ptr();
     if (pcb_ptr->fd[fd].flags == 0) {
         return -1; // cannot close unopened file
     }
