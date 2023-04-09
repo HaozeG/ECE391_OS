@@ -132,21 +132,22 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
 *   INPUTS: fd - file descriptor proxy. 
 *           buf - buffer to write the filename into. 
 *           nbytes - number of bytes to be read, but seems useless
-*   RETURN VALUE: 0 for success, -1 for failed to read, or failed to find a file with that name. 
+*   RETURN VALUE: nbytes for success, 0 for failed to read, or failed to find a file with that name. 
 *   SIDE EFFECTS: writes the name of a file inside our directory into the buffer.
 */
 int32_t read_directory(int32_t fd, void* buf, int32_t nbytes) { // write all file names into the buf
     //uint32_t inum = fd->inode;
     if (buf == 0) {
-        return -1;
+        return 0;
     }
     directory_entry_t dentry; 
+    int8_t *buf_to = (int8_t *)buf;
     
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, &dentry) < 0) {
-        return -1;
+        return 0;
     }
-    uint32_t bytes_read = (uint32_t)strncpy((int8_t *)buf, (int8_t *)dentry.file_name, 32);
+    uint32_t bytes_read = (uint32_t)strncpy(buf_to, (int8_t *)dentry.file_name, 32);
     pcb_ptr->fd[fd].file_position++;
     
     return bytes_read;
