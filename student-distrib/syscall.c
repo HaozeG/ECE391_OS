@@ -28,7 +28,7 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 * sys_halt
 *   DESCRIPTION: halt current process and return to execute
 *   INPUTS: status - return value for execute system call
-*   RETURN VALUE: status
+*   RETURN VALUE: none
 *   SIDE EFFECTS: Go to execute but not caller
 */
 int32_t sys_halt(uint8_t status) {
@@ -96,13 +96,15 @@ int32_t sys_halt(uint8_t status) {
 * sys_execute
 *   DESCRIPTION: Execute program based on input command
 *   INPUTS: command - the command to execute
-*   RETURN VALUE: 0 on success, -1 on failure
+*   RETURN VALUE: 0-255 - execute a halt, 
+*                   -1 - command cannot be executed
+*                   256 - dies by exception
 *   SIDE EFFECTS: context switch to new process
 */
 int32_t sys_execute(const uint8_t* command) {
     uint32_t new_pid;
     int32_t prog_eip;
-    uint8_t return_val;
+    int32_t return_val;
     int32_t i;
     uint8_t cmd[128],arg[128];
 
@@ -214,6 +216,7 @@ int32_t sys_execute(const uint8_t* command) {
     // Parse arguments
     int32_t arg_len = (int32_t)strlen ((int8_t *)arg);
     strncpy ((int8_t *)pcb_array[current_pid].args, (int8_t *)arg, (uint32_t)arg_len);
+    pcb_array[current_pid].args[arg_len] = 0;
 
     sti();
     // context switch
@@ -235,7 +238,7 @@ int32_t sys_execute(const uint8_t* command) {
             pushl %3                    \n\
             iret                        \n\
             RET_FROM_HALT:              \n\
-            movb %%al, %0               \n\
+            movl %%eax, %0               \n\
             "
             : "=r"(return_val)          \
             :  "b"(USER_DS), "c"(USER_CS), "d"(prog_eip)\
@@ -243,7 +246,7 @@ int32_t sys_execute(const uint8_t* command) {
     );
 
     // halt return to here
-    return (int32_t)return_val;
+    return return_val;
 }
 
 /*
