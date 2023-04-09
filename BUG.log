@@ -95,11 +95,25 @@ CreateTime:
                           BUG 6                          
 <--------------------------------------------------------->
 Time:
-    2022.4.7.
+    2023.4.7.
 Creator:
     Haoze Gao.
 Description:
     Page fault after going to the new user program.
 Solution:
     Add $ when doing cmp in system call handler.
+
+<--------------------------------------------------------->
+                          BUG 7                          
+<--------------------------------------------------------->
+Time:
+    2023.4.9.
+Creator:
+    Haoze Gao.
+Description:
+    read_directory returns very large number that cause exception.
+Solution:
+    The return value of given strncpy is a pointer but not number of 
+    bytes read. I change the return value of strncpy, strcpy.
+
 
