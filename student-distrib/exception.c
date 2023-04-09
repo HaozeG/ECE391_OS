@@ -1,5 +1,6 @@
 #include "exception.h"
 #include "types.h"
+#include "syscall.h"
 
 // Array of exception messages
 static char *exception_msg[32] = {
@@ -88,7 +89,10 @@ void common_exception_handler(int32_t num, int32_t error_code) {
             printf("- Error virtual address: 0x%x\n", error_address);
         }
     }
+    // return 256 to indicate exception
+    // TODO: deal with return value
+    sys_halt((uint8_t)256);
 
-    do {
-    }while (1);
+    // do {
+    // }while (1);
 }
