@@ -60,6 +60,7 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
         buf_to[i] = kbd_buffer[i];
         i++;
     }
+    buf_to[MAX_BUF - 1] = '\n';
 
     // reset enter indicator
     enter_buf = 0;
@@ -89,16 +90,18 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
 
     i = 0;
     cli();
-    if (buf_from[i] == '\n') {
-        putc('\n');
-    }
-    while (i < MAX_BUF && i < n_bytes && buf_from[i] != '\n')
+    // if (buf_from[i] == '\n') {
+    //     putc('\n');
+    // }
+    // while (i < MAX_BUF && i < n_bytes && buf_from[i] != '\n')
+    // while (i < MAX_BUF && i < n_bytes)
+    while (i < n_bytes)
     {
         putc(buf_from[i]);
         i++;
-        if (buf_from[i] == '\n') {
-            putc('\n');
-        }
+        // if (buf_from[i] == '\n') {
+        //     putc('\n');
+        // }
     }
 
     sti();
