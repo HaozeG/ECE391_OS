@@ -54,7 +54,7 @@ int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
 *   SIDE EFFECTS: writes the contents of a directory entry in our file system into the directory entry structure we provide. 
 */
 int32_t read_dentry_by_index (uint32_t index, directory_entry_t* dentry) {
-    if (index  < 0 || index > 62 || index >= boot_block_ptr->num_dir_entries) { // might be a redundant check. 
+    if (dentry == 0 || index  < 0 || index > 62 || index >= boot_block_ptr->num_dir_entries) { // might be a redundant check. 
         return -1; 
     }
     strncpy((int8_t*)dentry->file_name, (int8_t*)boot_block_ptr->dir_entries[index].file_name, 32); // copy the contents of the name into the dentry
@@ -140,12 +140,14 @@ int32_t read_directory(int32_t fd, void* buf, int32_t nbytes) { // write all fil
     if (buf == 0) {
         return -1;
     }
-    directory_entry_t* dentry; 
+    directory_entry_t dentry; 
+    
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
-    if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, dentry) < 0) {
+    if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, &dentry) < 0) {
         return -1;
     }
-    uint32_t bytes_read = (uint32_t)strncpy((int8_t *)buf, (int8_t *)dentry->file_name, 32);
+    // TODO: wrong implementation!
+    uint32_t bytes_read = (uint32_t)strncpy((int8_t *)buf, (int8_t *)dentry.file_name, 32);
     pcb_ptr->fd[fd].file_position++;
     
     return bytes_read;

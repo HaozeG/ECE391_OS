@@ -36,7 +36,7 @@ int32_t sys_halt(uint8_t status) {
     if (current_pid == 0 || current_pid == 1) {
         // restart shell
         pid_array[current_pid] = 0;
-        sys_execute((uint8_t *)"shell");
+        sys_execute((uint8_t *)"shell \n");
         // should never reach here
         return SYSCALL_FAIL;
     }
@@ -102,17 +102,39 @@ int32_t sys_execute(const uint8_t* command) {
     uint32_t new_pid;
     int32_t prog_eip;
     uint8_t return_val;
-    // uint8_t args[10][4];
+    int32_t i;
+    uint8_t cmd[128],arg[128];
+
     // check for NULL input
     if (!command) {
         return SYSCALL_FAIL;
     }
-    // parse arguments
+    // Parse arguments
+    int32_t command_len = (int32_t)strlen ((int8_t *)command);
+    for (i = 0; i < command_len; i++)
+    {
+        if (command[i] == ' ')
+          {
+            strncpy ((int8_t *)cmd, (int8_t *)command, i);
+            cmd[i] = '\0'; 
+            strncpy ((int8_t *)arg, (int8_t *)(command + i + 1), (uint32_t)(command_len - i - 1));
+            arg[command_len - i - 1] = '\0'; 
+            break;
+          }
+    }
+    if (i==command_len)
+    {
+        strncpy ((int8_t *)cmd, (int8_t *)command, i);
+        cmd[i] = '\0'; 
+        arg[0] = '\0';
+    }
+
+
     // TODO: call getarg
 
     directory_entry_t dentry;
     // search for command in file system
-    if (read_dentry_by_name(command, &dentry) != 0) {
+    if (read_dentry_by_name(cmd, &dentry) != 0) {
         return SYSCALL_FAIL;  // not found
     }
     // check file type(2 for regular file)
@@ -127,7 +149,7 @@ int32_t sys_execute(const uint8_t* command) {
     }
 
     // assign process number based on pid_array
-    uint32_t i = 0;
+    i = 0;
     pid_array[0] = 1;       // "kernel process", never return to pid 0
     // pid = 1 for base shell
     for (i = 1; i < NUM_PROCESS_MAX; i++) {
@@ -188,6 +210,12 @@ int32_t sys_execute(const uint8_t* command) {
     pcb_array[current_pid].saved_ebp = saved_ebp;
     pcb_array[current_pid].saved_esp = saved_esp;
     current_pid = new_pid;
+
+    // Parse arguments
+    int32_t arg_len = (int32_t)strlen ((int8_t *)arg);
+    strncpy ((int8_t *)pcb_array[current_pid].args, (int8_t *)arg, (uint32_t)arg_len);
+
+
     // context switch
     // push context on stack
     // eip = prog_eip
@@ -228,6 +256,7 @@ int32_t sys_execute(const uint8_t* command) {
 *   SIDE EFFECTS: 
 */
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
+    // pcb_t* pcb_ptr = get_pcb_ptr();
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return -1;
@@ -245,6 +274,7 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
 *   SIDE EFFECTS: 
 */
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
+    // pcb_t* pcb_ptr = get_pcb_ptr();
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return -1;
@@ -265,6 +295,7 @@ int32_t sys_open(const uint8_t* filename) {
     if (filename == 0 || read_dentry_by_name(filename, &dentry) == -1) {
         return -1;
     }
+    // pcb_t* pcb_ptr = get_pcb_ptr();
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     for (i = 2; i < 8; i++) {
         if(pcb_ptr->fd[i].flags == 0) {
@@ -297,6 +328,7 @@ int32_t sys_close(int32_t fd) {
     if (fd < 2 || fd > 7) {
         return -1;
     }
+    // pcb_t* pcb_ptr = get_pcb_ptr();
     pcb_t* pcb_ptr = (pcb_t*)(0x00800000 - (current_pid + 1) * 0x2000);
     if (pcb_ptr->fd[fd].flags == 0) {
         return -1; // cannot close unopened file
@@ -308,7 +340,18 @@ int32_t sys_close(int32_t fd) {
 };
 
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
-    return 0;
+    if (n_bytes <= 0) {
+        return SYSCALL_FAIL;
+    }
+    if (pcb_array[current_pid].args[0] == '\0')
+    {
+        return SYSCALL_FAIL;
+    }
+    else
+    {
+        strncpy((int8_t *)buf, (int8_t *)pcb_array[current_pid].args, n_bytes);   
+        return 0;
+    }
 };
 
 int32_t sys_vidmap(uint8_t** screen_start) {
@@ -344,13 +387,17 @@ int32_t program_loader(uint32_t inode) {
     return program_entry;
 }
 
-/*
-* go_to_user
-*   DESCRIPTION: push context and perform context switch
-*   INPUTS: prog_eip - eip of user program
-*   RETURN VALUE: none
-*   SIDE EFFECTS:
-*/
-void go_to_user(int32_t prog_eip) {
-
+// use mask to get pcb pointer of current process
+pcb_t* get_pcb_ptr() {
+    // go to head of 8KB block
+    uint32_t mask = 0xFFFFE000;
+    uint32_t current_esp;
+    asm volatile ("     \n\
+        movl %%esp, %0  \n\
+    "                   \
+    : "=r"(current_esp) \
+    :                   \
+    : "memory"          \
+    );
+    return (pcb_t *)(mask & current_esp);
 }

@@ -53,7 +53,7 @@ typedef struct {
     uint32_t parent_pid;
     uint32_t saved_esp;
     uint32_t saved_ebp;
-    uint32_t saved_eip;
+    uint8_t args[128];
 } pcb_t;
 
 
