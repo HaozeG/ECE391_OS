@@ -54,7 +54,6 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     };
 
     i = 0;
-    cli();
     // MAX_BUF: up to 128 characters
     while (i < MAX_BUF && i < count_char && i < n_bytes)
     {
@@ -82,7 +81,8 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
 {
     int32_t i;
     char *buf_from = (char *)buf;
-    if (!buf_from || n_bytes > MAX_BUF || n_bytes < 0)
+    // if (!buf_from || n_bytes > MAX_BUF || n_bytes < 0)
+    if (!buf_from || n_bytes < 0)
     {
         return -1;
     }
