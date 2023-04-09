@@ -31,7 +31,7 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 *   RETURN VALUE: none
 *   SIDE EFFECTS: Go to execute but not caller
 */
-int32_t sys_halt(uint8_t status) {
+int32_t sys_halt(uint16_t status) {
     // do not halt process 0 or 1
     if (current_pid == 0 || current_pid == 1) {
         printf("--RESTART BASE SHELL--\n");
@@ -79,7 +79,7 @@ int32_t sys_halt(uint8_t status) {
     // return to execute
     asm volatile ("                     \n\
             andl $0, %%eax             \n\
-            movb %0, %%al               \n\
+            movw %0, %%ax               \n\
             movl %1, %%esp              \n\
             movl %2, %%ebp              \n\
             jmp RET_FROM_HALT                         \n\

@@ -91,7 +91,7 @@ void common_exception_handler(int32_t num, int32_t error_code) {
     }
     // return 256 to indicate exception
     // TODO: deal with return value
-    sys_halt((uint8_t)256);
+    sys_halt((uint16_t)256);
 
     // do {
     // }while (1);
