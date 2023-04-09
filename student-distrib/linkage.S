@@ -65,9 +65,9 @@
 dispatch_syscall:
     /* check for valid system call number [1, 10] */
     cmp $1, %eax
-    jng bad_syscall
+    jl bad_syscall
     cmp $MAX_SYSCALL, %eax
-    jnl bad_syscall
+    jg bad_syscall
     // save registers to stack
     pushl %ebp
     pushl %edi

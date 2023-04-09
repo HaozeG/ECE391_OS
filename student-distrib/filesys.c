@@ -36,7 +36,7 @@ int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
         return -1;
     }
     for (i = 0; i < boot_block_ptr->num_dir_entries; i++) {
-        if (strncmp((int8_t*)fname, (int8_t*)boot_block_ptr->dir_entries[i].file_name, len) == 0) { // if the bytes match, then provide index and read by index
+        if (strncmp((int8_t*)fname, (int8_t*)boot_block_ptr->dir_entries[i].file_name, 32) == 0) { // if the bytes match, then provide index and read by index
             read_dentry_by_index(i, dentry);
             return 0;
         }

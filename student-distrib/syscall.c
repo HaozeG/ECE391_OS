@@ -7,10 +7,8 @@
 #include "terminal.h"
 #include "rtc.h"
 
-register uint32_t saved_ebp asm("ebp");
-register uint32_t saved_esp asm("esp");
 // variable to know which is current process
-uint32_t current_pid = 0;
+uint32_t current_pid = 1;
 
 // array of processes (to find available process number)
 static uint8_t pid_array[NUM_PROCESS_MAX];
@@ -34,10 +32,15 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 *   SIDE EFFECTS: Go to execute but not caller
 */
 int32_t sys_halt(uint8_t status) {
-    // do not halt process 0
-    if (current_pid == 0) {
+    // do not halt process 0 or 1
+    if (current_pid == 0 || current_pid == 1) {
+        // restart shell
+        pid_array[current_pid] = 0;
+        sys_execute((uint8_t *)"shell");
+        // should never reach here
         return SYSCALL_FAIL;
     }
+    
     uint32_t parent_pid = pcb_array[current_pid].parent_pid;
 
     // clear PCB
@@ -47,10 +50,7 @@ int32_t sys_halt(uint8_t status) {
     // clear fd
     int i;
     for (i = 0; i < 8; i++) {
-        pcb_array[current_pid].fd[i].file_operations_table_pointer = 0;
-        pcb_array[current_pid].fd[i].file_position = 0;
-        pcb_array[current_pid].fd[i].flags = 0;
-        pcb_array[current_pid].fd[i].inode = 0;
+        sys_close(i);
     }
 
     // clear value in pid_array
@@ -60,8 +60,7 @@ int32_t sys_halt(uint8_t status) {
     *pcb_start = pcb_array[current_pid];
 
     // set esp0, ss0 in TTS
-    // TODO: esp fixed value?
-    tss.esp0 = (uint32_t)(0x800000 - parent_pid * 0x2000 - 1);     // end of 8KB block(4 for return address)
+    tss.esp0 = (uint32_t)(0x800000 - parent_pid * 0x2000 - 4);     // end of 8KB block(4 for return address)
     tss.ss0 = KERNEL_DS;
     // set up paging
     page_init(parent_pid);
@@ -78,8 +77,8 @@ int32_t sys_halt(uint8_t status) {
     current_pid = parent_pid;
     // return to execute
     asm volatile ("                     \n\
-            andl $0, %%eax           \n\
-            // movb %0, %%eax               \n\
+            andl $0, %%eax             \n\
+            movb %0, %%al               \n\
             movl %1, %%esp              \n\
             movl %2, %%ebp              \n\
             jmp RET_FROM_HALT                         \n\
@@ -102,7 +101,8 @@ int32_t sys_halt(uint8_t status) {
 int32_t sys_execute(const uint8_t* command) {
     uint32_t new_pid;
     int32_t prog_eip;
-    uint8_t args[10][4];
+    uint8_t return_val;
+    // uint8_t args[10][4];
     // check for NULL input
     if (!command) {
         return SYSCALL_FAIL;
@@ -128,16 +128,18 @@ int32_t sys_execute(const uint8_t* command) {
 
     // assign process number based on pid_array
     uint32_t i = 0;
-    for (i = 0; i < NUM_PROCESS_MAX; i++) {
+    pid_array[0] = 1;       // "kernel process", never return to pid 0
+    // pid = 1 for base shell
+    for (i = 1; i < NUM_PROCESS_MAX; i++) {
         if (pid_array[i] == 0) {
             pid_array[i] = 1;
+            new_pid = i;
             break;
         }
     }
-    if (i == NUM_PROCESS_MAX) {
-        return -1;
+    if (i == NUM_PROCESS_MAX || i == 0) {
+        return SYSCALL_FAIL;
     }
-    new_pid = i;
 
     // set up paging
     page_init(new_pid);
@@ -173,18 +175,20 @@ int32_t sys_execute(const uint8_t* command) {
     pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)std_table;
     // store parent process id
     pcb_array[new_pid].parent_pid = current_pid;
-    current_pid = new_pid;
     // put pointer to pcb to the start of 8KB block(8MB - (pid + 1)*8KB)
     pcb_t* pcb_start = (pcb_t *)(0x00800000 - (new_pid + 1) * 0x2000);
     *pcb_start = pcb_array[new_pid];
 
     // set esp0, ss0 in TTS
-    tss.esp0 = (uint32_t)(0x800000 - new_pid * 0x2000 - 1);     // end of 8KB block(4 for return address)
+    tss.esp0 = (uint32_t)(0x800000 - new_pid * 0x2000 - 4);     // end of 8KB block(4 for return address)
     tss.ss0 = KERNEL_DS;
 
-    // context switch
+    register uint32_t saved_ebp asm("ebp");
+    register uint32_t saved_esp asm("esp");
     pcb_array[current_pid].saved_ebp = saved_ebp;
     pcb_array[current_pid].saved_esp = saved_esp;
+    current_pid = new_pid;
+    // context switch
     // push context on stack
     // eip = prog_eip
     // esp = 132MB - 4B = 0x083FFFFC
@@ -196,23 +200,33 @@ int32_t sys_execute(const uint8_t* command) {
             movw %%ax, %%fs             \n\
             movw %%ax, %%gs             \n\
             movl $0x083FFFFC, %%ebp     \n\
-            pushl %0                    \n\
+            pushl %1                    \n\
             pushl $0x083FFFFC           \n\
             pushfl                      \n\
-            pushl %1                    \n\
             pushl %2                    \n\
+            pushl %3                    \n\
             iret                        \n\
             RET_FROM_HALT:              \n\
+            movb %%al, %0               \n\
             "
-            :                             \
+            : "=r"(return_val)          \
             :  "b"(USER_DS), "c"(USER_CS), "d"(prog_eip)\
             :  "memory", "cc", "eax"
     );
 
     // halt return to here
-    return 0;
+    return (int32_t)return_val;
 }
 
+/*
+* sys_read
+*   DESCRIPTION: perform read based on fd
+*   INPUTS: fd - file descriptor
+*           buf - buffer to read to
+*           nbytes - maximum bytes to read
+*   RETURN VALUE: number of bytes read on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
@@ -221,6 +235,15 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
     return pcb_ptr->fd[fd].file_operations_table_pointer->read(fd, buf, nbytes);
 };
 
+/*
+* sys_write
+*   DESCRIPTION: write from buffer
+*   INPUTS: fd
+*           buf - buffer to write from
+*           nbytes - maximum bytes to write
+*   RETURN VALUE: bytes written on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
@@ -229,6 +252,13 @@ int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
     return pcb_ptr->fd[fd].file_operations_table_pointer->write(fd, buf, nbytes);
 };
 
+/*
+* sys_open
+*   DESCRIPTION: open a file for use
+*   INPUTS: filename
+*   RETURN VALUE: file descriptor on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_open(const uint8_t* filename) {
     directory_entry_t dentry;
     int i;
@@ -256,6 +286,13 @@ int32_t sys_open(const uint8_t* filename) {
     return -1; // no open slot in the fd array
 };
 
+/*
+* sys_close
+*   DESCRIPTION: close a file
+*   INPUTS: fd
+*   RETURN VALUE: 0 on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_close(int32_t fd) {
     if (fd < 2 || fd > 7) {
         return -1;
