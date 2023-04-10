@@ -1,5 +1,6 @@
 #include "filesys.h"
 #include "lib.h"
+#include "syscall.h"
 
 /*
 * filesys_init
@@ -28,14 +29,14 @@ void filesys_init(uint32_t filesys_addr) {
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
     int i;
     int len = strlen((int8_t*)fname);
-    if (len > 32) { // if the length of the file name is longer than the max, set to check only the max length allowed.
-        len = 32;
+    if (len > 32) { // if the length of the file name is longer than the max, it cannot exist in our filesystem.
+        return -1; 
     }
     if (fname == 0 || dentry == 0) { // NULL check
         return -1;
     }
     for (i = 0; i < boot_block_ptr->num_dir_entries; i++) {
-        if (strncmp((int8_t*)fname, (int8_t*)boot_block_ptr->dir_entries[i].file_name, len) == 0) { // if the bytes match, then provide index and read by index
+        if (strncmp((int8_t*)fname, (int8_t*)boot_block_ptr->dir_entries[i].file_name, 32) == 0) { // if the bytes match, then provide index and read by index
             read_dentry_by_index(i, dentry);
             return 0;
         }
@@ -53,7 +54,7 @@ int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry) {
 *   SIDE EFFECTS: writes the contents of a directory entry in our file system into the directory entry structure we provide. 
 */
 int32_t read_dentry_by_index (uint32_t index, directory_entry_t* dentry) {
-    if (index  < 0 || index > 62 || index >= boot_block_ptr->num_dir_entries) { // might be a redundant check. 
+    if (dentry == 0 || index  < 0 || index > 62 || index >= boot_block_ptr->num_dir_entries) { // might be a redundant check. 
         return -1; 
     }
     strncpy((int8_t*)dentry->file_name, (int8_t*)boot_block_ptr->dir_entries[index].file_name, 32); // copy the contents of the name into the dentry
@@ -83,7 +84,7 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
     inode_t* inode_b = inode_start_ptr+inode; // the pointer to the inode to our file. 
     int length_of_file = inode_b->length; 
     // uint32_t bnum; // the data block number. 
-    printf("length of file: %d \n", length_of_file);
+    // printf("length of file: %d \n", length_of_file);
     if (inode + 1 > boot_block_ptr->num_inodes) { // is the inode valid check.
         return -1; 
     }
@@ -131,21 +132,24 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
 *   INPUTS: fd - file descriptor proxy. 
 *           buf - buffer to write the filename into. 
 *           nbytes - number of bytes to be read, but seems useless
-*   RETURN VALUE: 0 for success, -1 for failed to read, or failed to find a file with that name. 
+*   RETURN VALUE: nbytes for success, 0 for failed to read, or failed to find a file with that name. 
 *   SIDE EFFECTS: writes the name of a file inside our directory into the buffer.
 */
-int32_t read_directory(file_t* fd, void* buf, int32_t nbytes) { // write all file names into the buf
+int32_t read_directory(int32_t fd, void* buf, int32_t nbytes) { // write all file names into the buf
     //uint32_t inum = fd->inode;
     if (buf == 0) {
-        return -1;
-    }
-    directory_entry_t* dentry; 
-    if (read_dentry_by_index(fd->file_position, dentry) == -1) {
         return 0;
     }
-    fd->file_position++;
-    uint32_t bytes_read = strlen((int8_t*)dentry->file_name);
-    strncpy(buf, (int8_t*)dentry->file_name, 32);
+    directory_entry_t dentry; 
+    int8_t *buf_to = (int8_t *)buf;
+    
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, &dentry) < 0) {
+        return 0;
+    }
+    uint32_t bytes_read = (uint32_t)strncpy(buf_to, (int8_t *)dentry.file_name, 32);
+    pcb_ptr->fd[fd].file_position++;
+    
     return bytes_read;
 }
 
@@ -188,11 +192,16 @@ int32_t close_directory(int32_t fd) {
 *   RETURN VALUE: -1 for failed, and number of bytes read is returned. 
 *   SIDE EFFECTS: buf is written into. 
 */
-int32_t read_file(file_t* fd, void* buf, int32_t nbytes) {
+int32_t read_file(int32_t fd, void* buf, int32_t nbytes) {
     if (buf == 0) {
         return -1;
     }
-    uint32_t bRead = read_data(fd->inode, fd->file_position, buf, nbytes);
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    uint32_t bRead = read_data(pcb_ptr->fd[fd].inode, pcb_ptr->fd[fd].file_position, buf, nbytes);
+    if (bRead < 0) { // read failed.
+        return -1;
+    }
+    pcb_ptr->fd[fd].file_position += bRead; // increment file position to designate where to start next read.
     return bRead;
 }
 
