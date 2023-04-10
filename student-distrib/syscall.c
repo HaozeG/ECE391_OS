@@ -19,7 +19,8 @@ static pcb_t pcb_array[NUM_PROCESS_MAX];
 uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};
 
 // pointer to a table of file operations
-static uint32_t *std_table[] = {(uint32_t *)terminal_open, (uint32_t *)terminal_close, (uint32_t *)terminal_read, (uint32_t *)terminal_write};
+static uint32_t *stdin_table[] = {(uint32_t *)terminal_open, (uint32_t *)terminal_close, (uint32_t *)terminal_read, (uint32_t *)illegal};
+static uint32_t *stdout_table[] = {(uint32_t *)terminal_open, (uint32_t *)terminal_close, (uint32_t *)illegal, (uint32_t *)terminal_write};
 static uint32_t *file_table[] = {(uint32_t *)open_file, (uint32_t *)close_file, (uint32_t *)read_file, (uint32_t *)write_file};
 static uint32_t *dir_table[] = {(uint32_t *)open_directory, (uint32_t *)close_directory, (uint32_t *)read_directory, (uint32_t *)write_directory};
 static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (uint32_t *)rtc_read, (uint32_t *)rtc_write};
@@ -192,11 +193,11 @@ int32_t sys_execute(const uint8_t* command) {
     pcb_array[new_pid].fd[0].flags = 1;
     pcb_array[new_pid].fd[0].file_position = 0;
     pcb_array[new_pid].fd[0].inode = 0;
-    pcb_array[new_pid].fd[0].file_operations_table_pointer = (fot_t*)std_table;
+    pcb_array[new_pid].fd[0].file_operations_table_pointer = (fot_t*)stdin_table;
     pcb_array[new_pid].fd[1].flags = 1;
     pcb_array[new_pid].fd[1].file_position = 0;
     pcb_array[new_pid].fd[1].inode = 0;
-    pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)std_table;
+    pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)stdout_table;
     // store parent process id
     pcb_array[new_pid].parent_pid = current_pid;
     // put pointer to pcb to the start of 8KB block(8MB - (pid + 1)*8KB)
@@ -402,4 +403,9 @@ pcb_t* get_pcb_ptr() {
     : "memory"          \
     );
     return (pcb_t *)(mask & current_esp);
+}
+
+// function for illegal file operation
+int32_t illegal(int32_t fd, void* buf, int32_t nbytes) {
+    return -1;
 }

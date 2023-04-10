@@ -56,7 +56,7 @@ typedef struct {
     uint8_t args[128];
 } pcb_t;
 
-
+int32_t illegal(int32_t fd, void* buf, int32_t nbytes);
 int32_t open(const uint8_t* filename);
 int32_t read(int32_t fd, void* buf, int32_t nbytes);
 int32_t write(int32_t fd, const void* buf, int32_t nbytes);
