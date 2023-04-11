@@ -161,6 +161,7 @@ int32_t sys_execute(const uint8_t* command) {
         }
     }
     if (i == NUM_PROCESS_MAX || i == 0) {
+        printf("CANNOT CREATE MORE PROCESS!\n");
         return SYSCALL_FAIL;
     }
 
@@ -262,7 +263,7 @@ int32_t sys_execute(const uint8_t* command) {
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
     pcb_t* pcb_ptr = get_pcb_ptr();
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
-        return -1;
+        return SYSCALL_FAIL;
     }
     return pcb_ptr->fd[fd].file_operations_table_pointer->read(fd, buf, nbytes);
 };
@@ -279,7 +280,7 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
     pcb_t* pcb_ptr = get_pcb_ptr();
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
-        return -1;
+        return SYSCALL_FAIL;
     }
     return pcb_ptr->fd[fd].file_operations_table_pointer->write(fd, buf, nbytes);
 };
@@ -340,7 +341,7 @@ int32_t sys_close(int32_t fd) {
 };
 
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
-    if (n_bytes <= 0) {
+    if (n_bytes <= 0 || buf == NULL) {
         return SYSCALL_FAIL;
     }
     if (pcb_array[current_pid].args[0] == '\0')
@@ -355,18 +356,21 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
 };
 
 int32_t sys_vidmap(uint8_t** screen_start) {
-    return 0;
+    if (screen_start == NULL || *screen_start == NULL) {
+        return SYSCALL_FAIL;
+    }
+    return SYSCALL_FAIL;
 };
 
 int32_t sys_set_handler(int32_t signum, void* handler_address) {
     if (signum < 0 || signum >= NUM_VEC || handler_address == 0) {
-        return -1;
+        return SYSCALL_FAIL;
     }
-    return 0;
+    return SYSCALL_FAIL;
 };
 
 int32_t sys_sigreturn(void) {
-    return 0;
+    return SYSCALL_FAIL;
 };
 
 /*
