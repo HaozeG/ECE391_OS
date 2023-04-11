@@ -38,6 +38,7 @@
         addl $8, %esp               ;\
         popfl                     ;\
         popal                     ;\
+        popl 0                   ;\
         iret                      ;\
 
 /*
