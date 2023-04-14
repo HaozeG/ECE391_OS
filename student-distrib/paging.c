@@ -54,6 +54,20 @@ void page_init(uint32_t pid) {
         process_paging[pid].page_table[i].avail = 0;
         process_paging[pid].page_table[i].page_base_addr = 0;
     }
+        /*generically fill vidmap Page Table*/
+    for (i = 0; i < PAGE_SIZE; i++){
+        process_paging[pid].pte_vidmap[i].page_base_addr = i;
+        process_paging[pid].pte_vidmap[i].present = 0;
+        process_paging[pid].pte_vidmap[i].read_write = 1;
+        process_paging[pid].pte_vidmap[i].user_supervisor = 0;
+        process_paging[pid].pte_vidmap[i].write_through = 0;
+        process_paging[pid].pte_vidmap[i].cache_disabled = 1;
+        process_paging[pid].pte_vidmap[i].accessed = 0;
+        process_paging[pid].pte_vidmap[i].dirty = 0;
+        process_paging[pid].pte_vidmap[i].page_table_attribute_index = 0;
+        process_paging[pid].pte_vidmap[i].global_page = 0;
+        process_paging[pid].pte_vidmap[i].avail = 0x00;
+    }
     // (VIDEO_MEM_ADDR >> 12) & 0x03FF
     // set other fields of the pagetable
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].present = 1;

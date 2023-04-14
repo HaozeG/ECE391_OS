@@ -62,6 +62,7 @@ typedef struct table_entry {
 typedef struct {
     pde_t page_directory[PAGE_SIZE];
     pte_t page_table[PAGE_SIZE];
+    pte_t pte_vidmap[PAGE_SIZE];
 }__attribute__((packed)) process_paging_t;
 
 process_paging_t process_paging[NUM_PROCESS_MAX] __attribute__((aligned(ALIGNMENT4KIB)));
