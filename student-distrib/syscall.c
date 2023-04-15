@@ -361,23 +361,23 @@ int32_t sys_vidmap(uint8_t** screen_start) {
     if (screen_start == NULL || *screen_start == NULL) {
         return SYSCALL_FAIL;
     }
-    // if((uint32_t)screen_start < 0x8000000 || (uint32_t)screen_start > 0x8400000) {
-    //     return SYSCALL_FAIL;; //check if screen is within bounds
-    // }
-    // process_paging[pid].page_directory[34].present = 1;                 //34 is the video index
-    // process_paging[pid].page_directory[34].page_size = 0;
-    // process_paging[pid].page_directory[34].user_supervisor = 1;
-    // process_paging[pid].page_directory[34].page_table_base_addr = ((uint32_t)process_paging[pid].pte_vidmap) >> 12; //shift from 32 bits to 20 bits
+    if((uint32_t)screen_start < 0x8000000 || (uint32_t)screen_start > 0x8400000) {
+        return SYSCALL_FAIL;; //check if screen is within bounds
+    }
+    process_paging[current_pid].page_directory[34].pde_page_table.present = 1;                 //34 is the video index
+    process_paging[pid].page_directory[34].page_size = 0;
+    process_paging[pid].page_directory[34].user_supervisor = 1;
+    process_paging[pid].page_directory[34].page_table_base_addr = ((uint32_t)process_paging[pid].pte_vidmap) >> 12; //shift from 32 bits to 20 bits
 
-    // //page of the vidmap page table
-    // process_paging[pid].pte_vidmap[0].present = 1;
-    // process_paging[pid].pte_vidmap[0].user_supervisor = 1;
-    // process_paging[pid].pte_vidmap[0].page_base_addr = 0xB8000 >> 12;   //video memory address
-    // flush_tlb();
+    //page of the vidmap page table
+    process_paging[pid].pte_vidmap[0].present = 1;
+    process_paging[pid].pte_vidmap[0].user_supervisor = 1;
+    process_paging[pid].pte_vidmap[0].page_base_addr = 0xB8000 >> 12;   //video memory address
+    flush_tlb();
 
-    // *screen_start = (uint8_t*)(0x8800000); //start address of screen is now 136 MB 
+    *screen_start = (uint8_t*)(0x8800000); //start address of screen is now 136 MB 
      
-    // return 0;
+    return 0;
     return SYSCALL_FAIL;
 
 };
