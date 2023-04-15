@@ -6,6 +6,7 @@
 #include "keyboard.h"
 #include "terminal.h"
 #include "rtc.h"
+#include <stdint.h>
 
 // variable to know which is current process
 uint32_t current_pid = 1;
@@ -42,7 +43,7 @@ int32_t sys_halt(uint16_t status) {
         // should never reach here
         return SYSCALL_FAIL;
     }
-    
+
     uint32_t parent_pid = pcb_array[current_pid].parent_pid;
 
     // clear PCB
@@ -97,7 +98,7 @@ int32_t sys_halt(uint16_t status) {
 * sys_execute
 *   DESCRIPTION: Execute program based on input command
 *   INPUTS: command - the command to execute
-*   RETURN VALUE: 0-255 - execute a halt, 
+*   RETURN VALUE: 0-255 - execute a halt,
 *                   -1 - command cannot be executed
 *                   256 - dies by exception
 *   SIDE EFFECTS: context switch to new process
@@ -120,16 +121,16 @@ int32_t sys_execute(const uint8_t* command) {
         if (command[i] == ' ')
           {
             strncpy ((int8_t *)cmd, (int8_t *)command, i);
-            cmd[i] = '\0'; 
+            cmd[i] = '\0';
             strncpy ((int8_t *)arg, (int8_t *)(command + i + 1), (uint32_t)(command_len - i - 1));
-            arg[command_len - i - 1] = '\0'; 
+            arg[command_len - i - 1] = '\0';
             break;
           }
     }
     if (i==command_len)
     {
         strncpy ((int8_t *)cmd, (int8_t *)command, i);
-        cmd[i] = '\0'; 
+        cmd[i] = '\0';
         arg[0] = '\0';
     }
 
@@ -258,7 +259,7 @@ int32_t sys_execute(const uint8_t* command) {
 *           buf - buffer to read to
 *           nbytes - maximum bytes to read
 *   RETURN VALUE: number of bytes read on success, -1 on failure
-*   SIDE EFFECTS: 
+*   SIDE EFFECTS:
 */
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
     pcb_t* pcb_ptr = get_pcb_ptr();
@@ -275,7 +276,7 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
 *           buf - buffer to write from
 *           nbytes - maximum bytes to write
 *   RETURN VALUE: bytes written on success, -1 on failure
-*   SIDE EFFECTS: 
+*   SIDE EFFECTS:
 */
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
     pcb_t* pcb_ptr = get_pcb_ptr();
@@ -290,7 +291,7 @@ int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
 *   DESCRIPTION: open a file for use
 *   INPUTS: filename
 *   RETURN VALUE: file descriptor on success, -1 on failure
-*   SIDE EFFECTS: 
+*   SIDE EFFECTS:
 */
 int32_t sys_open(const uint8_t* filename) {
     directory_entry_t dentry;
@@ -324,7 +325,7 @@ int32_t sys_open(const uint8_t* filename) {
 *   DESCRIPTION: close a file
 *   INPUTS: fd
 *   RETURN VALUE: 0 on success, -1 on failure
-*   SIDE EFFECTS: 
+*   SIDE EFFECTS:
 */
 int32_t sys_close(int32_t fd) {
     if (fd < 2 || fd > 7) {
@@ -350,7 +351,7 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     }
     else
     {
-        strncpy((int8_t *)buf, (int8_t *)pcb_array[current_pid].args, n_bytes);   
+        strncpy((int8_t *)buf, (int8_t *)pcb_array[current_pid].args, n_bytes);
         return 0;
     }
 };
@@ -359,7 +360,12 @@ int32_t sys_vidmap(uint8_t** screen_start) {
     if (screen_start == NULL || *screen_start == NULL) {
         return SYSCALL_FAIL;
     }
-    return SYSCALL_FAIL;
+    // check if in user page(128MB ~ 132MB)
+    if (screen_start < (uint8_t**)USER_ADDR_VIRTUAL || screen_start > (uint8_t**)(USER_ADDR_VIRTUAL + 0x0400000 - 1)) {
+        return SYSCALL_FAIL;
+    }
+    process_paging[current_pid].page_table[]
+    return 0;
 };
 
 int32_t sys_set_handler(int32_t signum, void* handler_address) {
