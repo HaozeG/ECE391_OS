@@ -667,9 +667,9 @@ int32_t strncmp(const int8_t *s1, const int8_t *s2, uint32_t n)
 /* int8_t* strcpy(int8_t* dest, const int8_t* src)
  * Inputs:      int8_t* dest = destination string of copy
  *         const int8_t* src = source string of copy
- * Return Value: pointer to dest
+ * Return Value: bytes copied
  * Function: copy the source string into the destination string */
-int8_t *strcpy(int8_t *dest, const int8_t *src)
+int32_t strcpy(int8_t *dest, const int8_t *src)
 {
     int32_t i = 0;
     while (src[i] != '\0')
@@ -678,16 +678,16 @@ int8_t *strcpy(int8_t *dest, const int8_t *src)
         i++;
     }
     dest[i] = '\0';
-    return dest;
+    return i;
 }
 
-/* int8_t* strcpy(int8_t* dest, const int8_t* src, uint32_t n)
+/* int8_t* strncpy(int8_t* dest, const int8_t* src, uint32_t n)
  * Inputs:      int8_t* dest = destination string of copy
  *         const int8_t* src = source string of copy
  *                uint32_t n = number of bytes to copy
- * Return Value: pointer to dest
+ * Return Value: bytes copied
  * Function: copy n bytes of the source string into the destination string */
-int8_t *strncpy(int8_t *dest, const int8_t *src, uint32_t n)
+int32_t strncpy(int8_t *dest, const int8_t *src, uint32_t n)
 {
     int32_t i = 0;
     while (src[i] != '\0' && i < n)
@@ -700,7 +700,7 @@ int8_t *strncpy(int8_t *dest, const int8_t *src, uint32_t n)
         dest[i] = '\0';
         i++;
     }
-    return dest;
+    return i;
 }
 
 /* void test_interrupts(void)

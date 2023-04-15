@@ -47,10 +47,12 @@ void rtc_init(void) {
 *   SIDE EFFECTS: none
 */
 void rtc_handler(void) {
+    cli();
     outb(RTC_REG_C, RTC_PORT);  //selects register C
     inb(RTC_DATA);    //throw away contents
     send_eoi(RTC_VEC - IRQ_BASE_VEC); //sends eoi after servicing interrupt
     flag_wait = 1;    //tells read to block interrupt
+    sti();
 }
 
 
@@ -89,8 +91,10 @@ int32_t rtc_close(int32_t fd)
 *   SIDE EFFECTS: none
 */
 int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {    
+    sti();
     flag_wait = 0;
     while(flag_wait == 0);     //used to wait until interrupt
+    flag_wait = 0;
     return 0;
 }
 
@@ -111,9 +115,7 @@ int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {
         freq = *((int32_t*)buf);
 
 
-    cli();
     set_freq(freq);       //setting the frequency
-    sti();
 
 
     return nbytes;
@@ -132,8 +134,10 @@ void set_freq(int32_t freq_final)
     char freq;
     unsigned char prev;
    
+    cli();
     outb(RTC_REG_A, RTC_PORT);    //Register A
     prev = inb(RTC_DATA);
+    sti();
    
     switch(freq_final){
         case 8192:
@@ -173,6 +177,8 @@ void set_freq(int32_t freq_final)
        
         default: return;
     }
+    cli();
     outb(RTC_REG_A, RTC_PORT);          //setting RS values
     outb( (prev & 0xF0) | freq, RTC_DATA);  //masking value
+    sti();
 }

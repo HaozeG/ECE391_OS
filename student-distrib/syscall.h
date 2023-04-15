@@ -18,7 +18,7 @@
 #define SYS_SIGRETURN  10
 
 // all system calls supported
-extern int32_t sys_halt(uint8_t status);
+extern int32_t sys_halt(uint16_t status);
 extern int32_t sys_execute(const uint8_t* command);
 extern int32_t sys_read(int32_t fd, void* buf, int32_t nbytes);
 extern int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes);
@@ -53,10 +53,10 @@ typedef struct {
     uint32_t parent_pid;
     uint32_t saved_esp;
     uint32_t saved_ebp;
-    uint32_t saved_eip;
+    uint8_t args[128];
 } pcb_t;
 
-
+int32_t illegal(int32_t fd, void* buf, int32_t nbytes);
 int32_t open(const uint8_t* filename);
 int32_t read(int32_t fd, void* buf, int32_t nbytes);
 int32_t write(int32_t fd, const void* buf, int32_t nbytes);
