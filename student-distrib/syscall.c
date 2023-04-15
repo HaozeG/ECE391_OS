@@ -6,7 +6,6 @@
 #include "keyboard.h"
 #include "terminal.h"
 #include "rtc.h"
-#include <stdint.h>
 
 // variable to know which is current process
 uint32_t current_pid = 1;
@@ -18,8 +17,6 @@ static pcb_t pcb_array[NUM_PROCESS_MAX];
 
 // First four bytes at the start of executable file
 uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};
-
-extern void flush_tlb();
 
 // pointer to a table of file operations
 static uint32_t *stdin_table[] = {(uint32_t *)terminal_open, (uint32_t *)terminal_close, (uint32_t *)terminal_read, (uint32_t *)illegal};
@@ -69,15 +66,16 @@ int32_t sys_halt(uint16_t status) {
     tss.ss0 = KERNEL_DS;
     // set up paging
     page_init(parent_pid);
-    // TLB flush
-    asm volatile ("                     \n\
-            movl %%cr3, %%eax           \n\
-            movl %%eax, %%cr3           \n\
-            "
-            :                           \
-            :                           \
-            :  "eax"
-    );
+    flush_tlb();
+    // undo vidmap of previous process
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 0;  
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 0;
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = 0; 
+    // page of the vidmap page table
+    process_paging[current_pid].pte_vidmap[0].present = 0;
+    process_paging[current_pid].pte_vidmap[0].user_supervisor = 0;
+    process_paging[current_pid].pte_vidmap[0].page_base_addr = 0; 
 
     current_pid = parent_pid;
     // return to execute
@@ -171,15 +169,7 @@ int32_t sys_execute(const uint8_t* command) {
     cli();
     // set up paging
     page_init(new_pid);
-    // TLB flush
-    asm volatile ("                     \n\
-            movl %%cr3, %%eax             \n\
-            movl %%eax, %%cr3             \n\
-            "
-            :                           \
-            :                           \
-            :  "eax"
-    );
+    flush_tlb();
 
     // load program image
     prog_eip = program_loader(dentry.inode_num);
@@ -358,29 +348,33 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     }
 };
 
+/*
+* sys_vidmap
+*   DESCRIPTION: Map video memory to virtual address 132MB, assign address to the address pointed by input pointer
+*   INPUTS: screen_start - pointer to the pointer of video memory
+*   RETURN VALUE: 0 on success, -1 on failure
+*   SIDE EFFECTS: Add a new 4KB page at 132MB
+*/
 int32_t sys_vidmap(uint8_t** screen_start) {
-    if (screen_start == NULL || *screen_start == NULL) {
-        return SYSCALL_FAIL;
+    if(screen_start == NULL || (uint32_t)screen_start < USER_ADDR_VIRTUAL || (uint32_t)screen_start > (USER_ADDR_VIRTUAL + fourMB - 1)) {
+        return SYSCALL_FAIL;; //check if screen is within bounds
     }
-    // if((uint32_t)screen_start < 0x8000000 || (uint32_t)screen_start > 0x8400000) {
-    //     return SYSCALL_FAIL;; //check if screen is within bounds
-    // }
-    // process_paging[pid].page_directory[34].present = 1;                 //34 is the video index
-    // process_paging[pid].page_directory[34].page_size = 0;
-    // process_paging[pid].page_directory[34].user_supervisor = 1;
-    // process_paging[pid].page_directory[34].page_table_base_addr = ((uint32_t)process_paging[pid].pte_vidmap) >> 12; //shift from 32 bits to 20 bits
+    
+    // set up page directory entry to 4KiB page
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;                 //34 is the video index
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 1;
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = ((uint32_t)process_paging[current_pid].pte_vidmap) >> 12; //shift from 32 bits to 20 bits
 
-    // //page of the vidmap page table
-    // process_paging[pid].pte_vidmap[0].present = 1;
-    // process_paging[pid].pte_vidmap[0].user_supervisor = 1;
-    // process_paging[pid].pte_vidmap[0].page_base_addr = 0xB8000 >> 12;   //video memory address
-    // flush_tlb();
+    //page of the vidmap page table
+    process_paging[current_pid].pte_vidmap[0].present = 1;
+    process_paging[current_pid].pte_vidmap[0].user_supervisor = 1;
+    process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
+    flush_tlb();
 
-    // *screen_start = (uint8_t*)(0x8800000); //start address of screen is now 136 MB 
-     
-    // return 0;
-    return SYSCALL_FAIL;
-
+    // store virtual video memory address as a pointer in user space
+    *screen_start = (uint8_t*)(USER_ADDR_VIRTUAL + fourMB);
+    return 0;
 };
 
 int32_t sys_set_handler(int32_t signum, void* handler_address) {
@@ -433,4 +427,23 @@ pcb_t* get_pcb_ptr() {
 // function for illegal file operation
 int32_t illegal(int32_t fd, void* buf, int32_t nbytes) {
     return -1;
+}
+
+/*
+* flush_tlb
+*   DESCRIPTION: Flush TLB by writing to cr3
+*   INPUTS: none
+*   RETURN VALUE: none
+*   SIDE EFFECTS: TLB flushed
+*/
+void flush_tlb() {
+    // TLB flush
+    asm volatile ("                     \n\
+            movl %%cr3, %%eax           \n\
+            movl %%eax, %%cr3           \n\
+            "
+            :                           \
+            :                           \
+            :  "eax"
+    );
 }
