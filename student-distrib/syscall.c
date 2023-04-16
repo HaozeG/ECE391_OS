@@ -11,9 +11,9 @@
 uint32_t current_pid = 1;
 
 // array of processes (to find available process number)
-static uint8_t pid_array[NUM_PROCESS_MAX];
+uint8_t pid_array[NUM_PROCESS_MAX];
 
-static pcb_t pcb_array[NUM_PROCESS_MAX];
+pcb_t pcb_array[NUM_PROCESS_MAX];
 
 // First four bytes at the start of executable file
 uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};

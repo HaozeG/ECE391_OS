@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "filesys.h"
 #include "types.h"
+#include "paging.h"
 
 #define SYSCALL_FAIL -1
 // System call numbers
@@ -53,6 +54,7 @@ typedef struct {
     uint32_t parent_pid;
     uint32_t saved_esp;
     uint32_t saved_ebp;
+    uint32_t saved_eip;
     uint8_t args[128];
 } pcb_t;
 
@@ -63,5 +65,9 @@ int32_t write(int32_t fd, const void* buf, int32_t nbytes);
 int32_t close(int32_t fd);
 pcb_t* get_pcb_ptr();
 void flush_tlb();
+
+extern uint32_t current_pid;
+extern uint8_t pid_array[NUM_PROCESS_MAX];
+extern pcb_t pcb_array[NUM_PROCESS_MAX];
 
 #endif
