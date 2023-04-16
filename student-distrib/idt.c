@@ -98,8 +98,9 @@ void init_idt() {
     // RTC
     idt[RTC_VEC].present = 1;
     SET_IDT_ENTRY(idt[RTC_VEC], RTC_INTERRUPT);
+    // PIT
+    idt[PIT_VEC].present = 1;
+    SET_IDT_ENTRY(idt[PIT_VEC], PIT_INTERRUPT);
 
     lidt(idt_desc_ptr); // Load IDTR
-
-
 };
