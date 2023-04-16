@@ -41,6 +41,9 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     {
         return -1;
     }
+    // output existing contents in keyboard buffer to screen
+    kbd_buffer[count_char] = '\0';
+    puts((int8_t *)kbd_buffer);
     cli();
     // Wait until enter pressed
     while (!enter_buf)
