@@ -309,7 +309,8 @@ int32_t sys_open(const uint8_t* filename) {
             } else if (dentry.file_type == 2) { // regular file
                 pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(file_table);
             }
-
+            // call actual open function of the device
+            pcb_ptr->fd[i].file_operations_table_pointer->open(filename);
             return i; // return the file descriptor upon successful initialization
         }
     }
