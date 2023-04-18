@@ -19,11 +19,9 @@ int8_t ATTRIB_BACK = 0x0;
 #define ATTRIB_TEXT ((ATTRIB_FORE & 0x0F) | ((ATTRIB_BACK & 0x0F) << 4))
 
 // Cursor position on screen
-static int screen_x;
-static int screen_y;
+int screen_x;
+int screen_y;
 static char *video_mem = (char *)VIDEO;
-static int prev_screen_x;
-static int prev_screen_y;
 
 // Cursor related ports and registers
 #define VGA_MISCELL 0x3C2
@@ -148,8 +146,6 @@ void clear(void)
     // reset to top left corner
     screen_x = 0;
     screen_y = 0;
-    prev_screen_x = 0;
-    prev_screen_y = 0;
     cursor_update(screen_x, screen_y);
 }
 
@@ -376,7 +372,6 @@ void scroll()
     if (screen_y != 0)
     {
         screen_y--;
-        prev_screen_y--;
     }
     cursor_update(screen_x, screen_y);
 }
@@ -667,12 +662,13 @@ int32_t strncmp(const int8_t *s1, const int8_t *s2, uint32_t n)
 /* int8_t* strcpy(int8_t* dest, const int8_t* src)
  * Inputs:      int8_t* dest = destination string of copy
  *         const int8_t* src = source string of copy
+ *                uint32_t n = maximum number of bytes to copy
  * Return Value: bytes copied
  * Function: copy the source string into the destination string */
-int32_t strcpy(int8_t *dest, const int8_t *src)
+int32_t strcpy(int8_t *dest, const int8_t *src, uint32_t n)
 {
     int32_t i = 0;
-    while (src[i] != '\0')
+    while (i < n && src[i] != '\0')
     {
         dest[i] = src[i];
         i++;
