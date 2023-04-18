@@ -81,21 +81,18 @@ void keyboard_handler()
             break;
         case EXT_CURSOR_UP:
             cursor_u_buf = 1;
-            cursor_update(screen_x, ++screen_y);
             break;
         case EXT_CURSOR_UP_REL:
             cursor_u_buf = 0;
             break;
         case EXT_CURSOR_DOWN:
             cursor_d_buf = 1;
-            cursor_update(screen_x, --screen_y);
             break;
         case EXT_CURSOR_DOWN_REL:
             cursor_d_buf = 0;
             break;
         case EXT_CURSOR_LEFT:
             cursor_l_buf = 1;
-            cursor_update(--screen_x, screen_y);
             break;
         case EXT_CURSOR_LEFT_REL:
             cursor_l_buf = 0;
