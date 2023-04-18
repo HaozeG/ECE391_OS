@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "syscall.h"
 
 int caps_buf = 0;
 int ctrl_buf = 0;
@@ -118,6 +119,11 @@ void keyboard_handler()
                 count_char = 0;
 
                 return;
+            }
+            if (ascii == 'c' || ascii == 'C')
+            {
+                count_char = 0;
+                sys_halt(0);
             }
             return;
         }
