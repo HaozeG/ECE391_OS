@@ -9,6 +9,7 @@
 #define VID_MEM_ADDR 0xB8000
 #define KERNEL_ADDR 0x400000
 #define USER_ADDR_VIRTUAL 0x8000000 // start at 128MB
+#define fourMB 0x400000
 #ifndef ASM
 
 typedef union direc_entry {
