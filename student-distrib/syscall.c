@@ -338,6 +338,14 @@ int32_t sys_close(int32_t fd) {
     return pcb_ptr->fd[fd].file_operations_table_pointer->close(fd);
 };
 
+/*
+* sys_getargs
+*   DESCRIPTION: read command line arguments into a user-level buffer
+*   INPUTS: buf - pointer to user level buffer
+*           n_bytes - maximum bytes to read
+*   RETURN VALUE: 0 on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     if (n_bytes <= 0 || buf == NULL) {
         return SYSCALL_FAIL;
