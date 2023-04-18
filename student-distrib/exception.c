@@ -91,9 +91,9 @@ void common_exception_handler(int32_t num, int32_t error_code) {
         }
     }
     set_color(0x07, 1);
-    // return 256 to indicate exception
-    // TODO: deal with return value
-    sys_halt((uint16_t)256);
+    // set exp_occured to indicate exception
+    exp_occured = 1;
+    sys_halt(0);
 
     // do {
     // }while (1);

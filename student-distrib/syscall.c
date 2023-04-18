@@ -9,6 +9,8 @@
 
 // variable to know which is current process
 uint32_t current_pid = 1;
+// variable to know if exception occured
+uint8_t exp_occured = 0;
 
 // array of processes (to find available process number)
 uint8_t pid_array[NUM_PROCESS_MAX];
@@ -32,7 +34,7 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 *   RETURN VALUE: none
 *   SIDE EFFECTS: Go to execute but not caller
 */
-int32_t sys_halt(uint16_t status) {
+int32_t sys_halt(uint8_t status) {
     // do not halt process 0 or 1
     if (current_pid == 0 || current_pid == 1) {
         printf("--RESTART BASE SHELL--\n");
@@ -81,13 +83,15 @@ int32_t sys_halt(uint16_t status) {
     // return to execute
     asm volatile ("                     \n\
             andl $0, %%eax             \n\
-            movw %0, %%ax               \n\
-            movl %1, %%esp              \n\
-            movl %2, %%ebp              \n\
+            movb %1, %%al               \n\
+            movb %4, %%ah               \n\
+            movb $0, %0                 \n\
+            movl %2, %%esp              \n\
+            movl %3, %%ebp              \n\
             jmp RET_FROM_HALT                         \n\
             "
-            :                           \
-            : "r"(status), "r"(pcb_array[parent_pid].saved_esp), "r"(pcb_array[parent_pid].saved_ebp)\
+            : "=g"(exp_occured)                          \
+            : "r"(status), "r"(pcb_array[parent_pid].saved_esp), "r"(pcb_array[parent_pid].saved_ebp), "r"(exp_occured)\
             :  "memory", "eax"
     );
     // never goes here
