@@ -1,10 +1,19 @@
 #include "keyboard.h"
+#include "syscall.h"
+#include "lib.h"
 
 int caps_buf = 0;
 int ctrl_buf = 0;
 int shift_l_buf = 0;
 int shift_r_buf = 0;
 int shift_buf = 0;
+int extended = 0;
+int alt_buf = 0;
+int cursor_l_buf = 0;
+int cursor_r_buf = 0;
+int cursor_u_buf = 0;
+int cursor_d_buf = 0;
+int alt_F_buf = 0;
 // int full = 0; // whether to allow normal char input
 
 int count_char = 0; // valid byte numbers in kbd buffer
@@ -51,102 +60,181 @@ void keyboard_handler()
 
     cli();
     scan_code = inb(KEYPORT) & 0xff; // read scan code
+    scan_code = inb(KEYPORT) & 0xff; // read scan code
     send_eoi(KEYBOARD_IRQ);
     sti();
-    if (scan_code == ENTER)
-    {
-        enter_buf = 1;
-        if (count_char < MAX_BUF) {
-            kbd_buffer[count_char] = '\n';
-            count_char++;
-            putc('\n');
-        }
-        return;
-        // count_char = 0; done by terminal after reading kbd buffer
-    }
-    else if (scan_code == CAPS)
-    {
-        caps_buf = caps_buf ^ 0x01;
-        return;
-    }
-    else if (scan_code == CTRL)
-    {
-        ctrl_buf = 1;
-        return;
-    }
-    else if (scan_code == CTRL_REL)
-    {
-        ctrl_buf = 0;
-        return;
-    }
-    else if (scan_code == SHIFT_L)
-    {
-        shift_l_buf = 1;
-        return;
-    }
-    else if (scan_code == SHIFT_L_REL)
-    {
-        shift_l_buf = 0;
-        return;
-    }
-    else if (scan_code == SHIFT_R)
-    {
-        shift_r_buf = 1;
-        return;
-    }
-    else if (scan_code == SHIFT_R_REL)
-    {
-        shift_r_buf = 0;
-        return;
-    }
-    else // normal char or tab or backspace
-    {
-        if (shift_l_buf == 1 || shift_r_buf == 1)
-            shift_buf = 1;
-        else
-            shift_buf = 0;
+    if (shift_l_buf == 1 || shift_r_buf == 1)
+        shift_buf = 1;
+    else
+        shift_buf = 0;
 
-        int mode = caps_buf * 2 + shift_buf;
-        ascii = scancode_table[mode][scan_code];
-
-        if (ctrl_buf) // CTRL key combinations
+    int mode = caps_buf * 2 + shift_buf;
+    ascii = scancode_table[mode][scan_code];
+    if (extended) {
+        switch (scan_code)
         {
-            if (ascii == 'l' || ascii == 'L') // CTRL + L: clear the screen
-            {
-                clear();
-                // kbd_buffer[] = {'\0'};
-                count_char = 0;
-
+        case ALT:
+            alt_buf = 1;
+            break;
+        case ALT_REL:
+            alt_buf = 0;
+            break;
+        case EXT_CURSOR_UP:
+            cursor_u_buf = 1;
+            break;
+        case EXT_CURSOR_UP_REL:
+            cursor_u_buf = 0;
+            break;
+        case EXT_CURSOR_DOWN:
+            cursor_d_buf = 1;
+            break;
+        case EXT_CURSOR_DOWN_REL:
+            cursor_d_buf = 0;
+            break;
+        case EXT_CURSOR_LEFT:
+            cursor_l_buf = 1;
+            break;
+        case EXT_CURSOR_LEFT_REL:
+            cursor_l_buf = 0;
+            break;
+        case EXT_CURSOR_RIGHT:
+            cursor_r_buf = 1;
+            break;
+        case EXT_CURSOR_RIGHT_REL:
+            cursor_r_buf = 0;
+            break;
+        default:
+            break;
+        }
+        extended = 0;
+    } else {
+        switch (scan_code)
+        {
+        // func keys
+        case ENTER:
+            enter_buf = 1;
+            if (count_char < MAX_BUF) {
+                kbd_buffer[count_char] = '\n';
+                count_char++;
+                putc('\n');
+            }
+            break;
+        case CAPS:
+            caps_buf = caps_buf ^ 0x01;
+            break;
+        case CTRL:
+            ctrl_buf = 1;
+            break;
+        case CTRL_REL:
+            ctrl_buf = 0;
+            break;
+        case SHIFT_L:
+            shift_l_buf = 1;
+            break;
+        case SHIFT_L_REL:
+            shift_l_buf = 0;
+            break;
+        case SHIFT_R:
+            shift_r_buf = 1;
+            break;
+        case SHIFT_R_REL:
+            shift_r_buf = 0;
+            break;
+        case ALT:
+            alt_buf = 1;
+            break;
+        case ALT_REL:
+            alt_buf = 0;
+            break;
+        // use keypad as cursor
+        // case EXT_CURSOR_UP:
+        //     cursor_u_buf = 1;
+        //     cursor_update(screen_x, --screen_y);
+        //     break;
+        // case EXT_CURSOR_UP_REL:
+        //     cursor_u_buf = 0;
+        //     break;
+        // case EXT_CURSOR_DOWN:
+        //     cursor_d_buf = 1;
+        //     cursor_update(screen_x, ++screen_y);
+        //     break;
+        // case EXT_CURSOR_DOWN_REL:
+        //     cursor_d_buf = 0;
+        //     break;
+        // case EXT_CURSOR_LEFT:
+        //     cursor_l_buf = 1;
+        //     cursor_update(--screen_x, screen_y);
+        //     break;
+        // case EXT_CURSOR_LEFT_REL:
+        //     cursor_l_buf = 0;
+        //     break;
+        // case EXT_CURSOR_RIGHT:
+        //     cursor_r_buf = 1;
+        //     cursor_update(++screen_x, screen_y);
+        //     break;
+        // case EXT_CURSOR_RIGHT_REL:
+        //     cursor_r_buf = 0;
+        //     break;
+        case EXT:
+            extended = 1;
+            break;
+        default:
+            if (alt_buf) {
+                if (scan_code >= F1 && scan_code <= F3) {
+                    if (alt_F_buf != (scan_code - F1 + 1)) {
+                        alt_F_buf = scan_code - F1 + 1;
+                        // switch terminal
+                        
+                    }
+                    return;
+                }
                 return;
             }
-            return;
-        }
+            if (ctrl_buf) // CTRL key combinations
+            {
+                if (ascii == 'l' || ascii == 'L') // CTRL + L: clear the screen
+                {
+                    clear();
+                    // kbd_buffer[] = {'\0'};
+                    count_char = 0;
 
-        // backspace
-        if (scan_code == BACKSPACE)
-        {
-            handle_backspace();
-            return;
-        }
+                    return;
+                }
+                if (ascii == 'c' || ascii == 'C')
+                {
+                    count_char = 0;
+                    sys_halt(0);
+                }
+                return;
+            }
 
-        if (count_char >= (MAX_BUF - 1) || enter_buf == 1)
-            return;
+            // backspace
+            if (scan_code == BACKSPACE)
+            {
+                handle_backspace();
+                return;
+            }
 
-        // tab
-        if (scan_code == TAB)
-        {
-            putc('\t');
-            kbd_buffer[count_char] = '\t';
-            count_char++;
-            return;
-        }
+            if (count_char >= (MAX_BUF - 1) || enter_buf == 1)
+                return;
 
-        if (ascii != 0)
-        {
-            // printf("mode = %d, shift = %d, count = %d\n", mode,shift_buf,count_char);
-            putc(ascii);                    // write char to screen
-            kbd_buffer[count_char] = ascii; // write to kbd buffer
-            count_char++;
+            // tab
+            if (scan_code == TAB)
+            {
+                putc('\t');
+                kbd_buffer[count_char] = '\t';
+                count_char++;
+                return;
+            }
+
+            if (ascii != 0)
+            {
+                // printf("mode = %d, shift = %d, count = %d\n", mode,shift_buf,count_char);
+                putc(ascii);                    // write char to screen
+                kbd_buffer[count_char] = ascii; // write to kbd buffer
+                count_char++;
+            }
+            break;
         }
     }
 }

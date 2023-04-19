@@ -69,7 +69,6 @@ void page_init(uint32_t pid) {
         process_paging[pid].pte_vidmap[i].global_page = 0;
         process_paging[pid].pte_vidmap[i].avail = 0;
     }
-    // (VIDEO_MEM_ADDR >> 12) & 0x03FF
     // set other fields of the pagetable
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].present = 1;
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].read_write = 1;

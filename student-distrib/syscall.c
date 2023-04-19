@@ -9,11 +9,13 @@
 
 // variable to know which is current process
 uint32_t current_pid = 1;
+// variable to know if exception occured
+uint8_t exp_occured = 0;
 
 // array of processes (to find available process number)
-static uint8_t pid_array[NUM_PROCESS_MAX];
+uint8_t pid_array[NUM_PROCESS_MAX];
 
-static pcb_t pcb_array[NUM_PROCESS_MAX];
+pcb_t pcb_array[NUM_PROCESS_MAX];
 
 // First four bytes at the start of executable file
 uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};
@@ -32,7 +34,7 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 *   RETURN VALUE: none
 *   SIDE EFFECTS: Go to execute but not caller
 */
-int32_t sys_halt(uint16_t status) {
+int32_t sys_halt(uint8_t status) {
     // do not halt process 0 or 1
     if (current_pid == 0 || current_pid == 1) {
         printf("--RESTART BASE SHELL--\n");
@@ -81,13 +83,15 @@ int32_t sys_halt(uint16_t status) {
     // return to execute
     asm volatile ("                     \n\
             andl $0, %%eax             \n\
-            movw %0, %%ax               \n\
-            movl %1, %%esp              \n\
-            movl %2, %%ebp              \n\
+            movb %1, %%al               \n\
+            movb %4, %%ah               \n\
+            movb $0, %0                 \n\
+            movl %2, %%esp              \n\
+            movl %3, %%ebp              \n\
             jmp RET_FROM_HALT                         \n\
             "
-            :                           \
-            : "r"(status), "r"(pcb_array[parent_pid].saved_esp), "r"(pcb_array[parent_pid].saved_ebp)\
+            : "=g"(exp_occured)                          \
+            : "r"(status), "r"(pcb_array[parent_pid].saved_esp), "r"(pcb_array[parent_pid].saved_ebp), "r"(exp_occured)\
             :  "memory", "eax"
     );
     // never goes here
@@ -305,7 +309,8 @@ int32_t sys_open(const uint8_t* filename) {
             } else if (dentry.file_type == 2) { // regular file
                 pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(file_table);
             }
-
+            // call actual open function of the device
+            pcb_ptr->fd[i].file_operations_table_pointer->open(filename);
             return i; // return the file descriptor upon successful initialization
         }
     }
@@ -333,6 +338,14 @@ int32_t sys_close(int32_t fd) {
     return pcb_ptr->fd[fd].file_operations_table_pointer->close(fd);
 };
 
+/*
+* sys_getargs
+*   DESCRIPTION: read command line arguments into a user-level buffer
+*   INPUTS: buf - pointer to user level buffer
+*           n_bytes - maximum bytes to read
+*   RETURN VALUE: 0 on success, -1 on failure
+*   SIDE EFFECTS: 
+*/
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     if (n_bytes <= 0 || buf == NULL) {
         return SYSCALL_FAIL;

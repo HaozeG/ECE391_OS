@@ -28,13 +28,11 @@ void rtc_init(void) {
     outb(RTC_REG_B, RTC_PORT);        //set the index again
     outb(prev | 0x40, RTC_DATA);       //write previous value ORed with 0x40. turns on six bit of register B
    
-    // // set rate
-    // outb(RTC_REG_A, RTC_PORT);            //set index to reg A
-    // prev = inb(RTC_DATA);
-    // outb(RTC_REG_A, RTC_PORT);            //reset index to A
-    // // outb((prev & 0xF0) | 0x06, RTC_DATA);           //frequency set to 1024
-    // outb(0x06, RTC_DATA);           //frequency set to 1024
-    set_freq(2);          //frequency set to 2 which is min
+    // set rate
+    outb(RTC_REG_A, RTC_PORT);            //set index to reg A
+    prev = inb(RTC_DATA);
+    outb(RTC_REG_A, RTC_PORT);          //setting RS values
+    outb( (prev & 0xF0) | 0x0F, RTC_DATA);  //set initial frequency to 2Hz
     enable_irq(RTC_VEC - IRQ_BASE_VEC);
 }
 
@@ -66,6 +64,7 @@ void rtc_handler(void) {
 int32_t rtc_open(const uint8_t* filename)
 {
     set_freq(2);  //setting frequency to 2Hz
+    flag_wait = 0;
     return 0;
 }
 

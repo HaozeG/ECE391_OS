@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "rtc.h"
 #include "syscall.h"
+#include "pit.h"
 
 #ifndef ASM
 
@@ -43,9 +44,10 @@ extern void RESERVED();
 // Wrapped system call handler
 extern int32_t dispatch_syscall(int32_t num);
 
-// wrapped keyboard handler
+// wrapped interrupt handler
 extern void KEYBOARD_INTERRUPT();
 extern void RTC_INTERRUPT();
+extern void PIT_INTERRUPT();
 
 int32_t dummy;  // not used
 
