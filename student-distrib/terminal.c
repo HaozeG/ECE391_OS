@@ -142,6 +142,10 @@ int32_t terminal_switch(int new_term_index) {
     if (run_queue[(int)new_term_index] == 0) {
         display_term = new_term_index;
         running_term = new_term_index;
+        vmem_remap();
+        // restore new video memory
+        memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + display_term * fourKB), fourKB);
+        cursor_update(screen_x[display_term], screen_y[display_term]);
         is_base_shell = 1;
         // create shell process for new terminal
         sys_execute((uint8_t *)"shell \n");
