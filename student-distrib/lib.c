@@ -15,7 +15,7 @@
 //     ^--------back colour bright bit OR enables blinking Text
 int8_t ATTRIB_FORE = 0x7;
 int8_t ATTRIB_BACK = 0x0;
-#define ATTRIB_BG ((0x7 & 0x0F) | (0x0 & 0x0F) << 4)    // default white & black
+#define ATTRIB_BG ((0x7 & 0x0F) | (0x0 & 0x0F) << 4) // default white & black
 #define ATTRIB_TEXT ((ATTRIB_FORE & 0x0F) | ((ATTRIB_BACK & 0x0F) << 4))
 
 // Cursor position on screen
@@ -335,6 +335,10 @@ void putc(uint8_t c)
         }
         else
             delc();
+    }
+    else if (c == '\0')
+    {
+        return;
     }
     else
     {

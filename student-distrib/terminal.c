@@ -100,6 +100,8 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
     // while (i < MAX_BUF && i < n_bytes)
     while (i < n_bytes)
     {
+        // printf("%s", buf_from);
+        
         putc(buf_from[i]);
         i++;
         // if (buf_from[i] == '\n') {
