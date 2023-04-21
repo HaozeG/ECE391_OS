@@ -4,6 +4,7 @@
 #include "lib.h"
 #include "keyboard.h"
 #include "terminal.h"
+#include "paging.h"
 
 #define VIDEO 0xB8000
 #define NUM_COLS 80
@@ -143,10 +144,16 @@ void set_color(int8_t attr, int8_t select)
 void clear(void)
 {
     int32_t i;
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * running_term);
+    }
     for (i = 0; i < NUM_ROWS * NUM_COLS; i++)
     {
-        *(uint8_t *)(video_mem + (i << 1)) = ' ';
-        *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB_BG;
+        *(uint8_t *)(video_mem_base + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem_base + (i << 1) + 1) = ATTRIB_BG;
     }
     // reset to top left corner
     screen_x[running_term] = 0;
