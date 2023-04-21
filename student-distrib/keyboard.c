@@ -192,13 +192,17 @@ void keyboard_handler()
             {
                 if (ascii == 'l' || ascii == 'L') // CTRL + L: clear the screen
                 {
+                    // TODO: clear displaying one
                     clear();
                     // kbd_buffer[] = {'\0'};
                     count_char[display_term] = 0;
                     return;
                 } else if (ascii == 'c' || ascii == 'C') {
-                    count_char[display_term] = 0;
-                    sys_halt(0);
+                    // TODO: halt the visible one
+                    // May change this implementation to signal
+                    // terminal_switch(display_term);
+                    // ctrl_buf = 1;
+                    // sys_halt(0);
                 } else {
                     return;
                 }
