@@ -17,8 +17,6 @@ uint8_t is_base_shell = 1;
 // array of processes (to find available process number)
 uint8_t pid_array[NUM_PROCESS_MAX];
 
-pcb_t pcb_array[NUM_PROCESS_MAX];
-
 // First four bytes at the start of executable file
 uint8_t magic_numbers[4] = {0x7F, 0x45, 0x4C, 0x46};
 
@@ -51,14 +49,15 @@ int32_t sys_halt(uint8_t status) {
         return SYSCALL_FAIL;
     }
 
-    uint32_t parent_pid = pcb_array[current_pid].parent_pid;
+    pcb_t *current_pcb = get_pcb_ptr(current_pid);
+    uint32_t parent_pid = current_pcb->parent_pid;
 
     // clear PCB
-    pcb_array[current_pid].parent_pid = 0;
-    pcb_array[current_pid].saved_ebp = 0;
-    pcb_array[current_pid].saved_esp = 0;
-    pcb_array[current_pid].saved_eip = 0;
-    pcb_array[current_pid].terminal = 0;
+    current_pcb->parent_pid = 0;
+    current_pcb->saved_ebp = 0;
+    current_pcb->saved_esp = 0;
+    current_pcb->saved_eip = 0;
+    current_pcb->terminal = 0;
     // clear fd
     int i;
     for (i = 0; i < 8; i++) {
@@ -67,9 +66,6 @@ int32_t sys_halt(uint8_t status) {
 
     // clear value in pid_array
     pid_array[current_pid] = 0;
-    // refresh pcb at the start of 8KB block(8MB - (pid + 1)*8KB)
-    pcb_t* pcb_start = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
-    *pcb_start = pcb_array[current_pid];
 
     // set esp0, ss0 in TTS
     tss.esp0 = (uint32_t)(0x800000 - parent_pid * 0x2000 - 4);     // end of 8KB block(4 for return address)
@@ -79,10 +75,11 @@ int32_t sys_halt(uint8_t status) {
     flush_tlb();
     // undo vidmap of previous process
     process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 0;
-    run_queue[running_term] = &pcb_array[parent_pid];
+    run_queue[running_term] = get_pcb_ptr(parent_pid);
 
     current_pid = parent_pid;
     vmem_remap();
+    current_pcb = get_pcb_ptr(current_pid);
     sti();
     // return to execute
     asm volatile ("                     \n\
@@ -95,7 +92,7 @@ int32_t sys_halt(uint8_t status) {
             jmp RET_FROM_HALT                         \n\
             "
             : "=g"(exp_occured)                          \
-            : "r"(status), "r"(pcb_array[parent_pid].saved_esp), "r"(pcb_array[parent_pid].saved_ebp), "r"(exp_occured)\
+            : "r"(status), "r"(current_pcb->saved_esp), "r"(current_pcb->saved_ebp), "r"(exp_occured)\
             :  "memory", "eax"
     );
     // never goes here
@@ -195,40 +192,39 @@ int32_t sys_execute(const uint8_t* command) {
         return SYSCALL_FAIL;
     }
 
+    register uint32_t saved_ebp asm("ebp");
+    register uint32_t saved_esp asm("esp");
+    pcb_t *current_pcb = get_pcb_ptr(current_pid);
+    current_pcb->saved_ebp = saved_ebp;
+    current_pcb->saved_esp = saved_esp;
+
     // set PCB
     // initialize fd(stdin, stdout, program file)
-    pcb_array[new_pid].fd[0].flags = 1;
-    pcb_array[new_pid].fd[0].file_position = 0;
-    pcb_array[new_pid].fd[0].inode = 0;
-    pcb_array[new_pid].fd[0].file_operations_table_pointer = (fot_t*)stdin_table;
-    pcb_array[new_pid].fd[1].flags = 1;
-    pcb_array[new_pid].fd[1].file_position = 0;
-    pcb_array[new_pid].fd[1].inode = 0;
-    pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)stdout_table;
+    current_pcb = get_pcb_ptr(new_pid);
+    current_pcb->fd[0].flags = 1;
+    current_pcb->fd[0].file_position = 0;
+    current_pcb->fd[0].inode = 0;
+    current_pcb->fd[0].file_operations_table_pointer = (fot_t*)stdin_table;
+    current_pcb->fd[1].flags = 1;
+    current_pcb->fd[1].file_position = 0;
+    current_pcb->fd[1].inode = 0;
+    current_pcb->fd[1].file_operations_table_pointer = (fot_t*)stdout_table;
     // store parent process id
-    pcb_array[new_pid].parent_pid = current_pid;
-    pcb_array[new_pid].pid = new_pid;
-    // put pointer to pcb to the start of 8KB block(8MB - (pid + 1)*8KB)
-    pcb_t* pcb_start = (pcb_t *)(0x00800000 - (new_pid + 1) * 0x2000);
-    *pcb_start = pcb_array[new_pid];
+    current_pcb->parent_pid = current_pid;
+    current_pcb->pid = new_pid;
+    current_pid = new_pid;
 
     // set esp0, ss0 in TTS
     tss.esp0 = (uint32_t)(0x800000 - new_pid * 0x2000 - 4);     // end of 8KB block(4 for return address)
     tss.ss0 = KERNEL_DS;
 
-    register uint32_t saved_ebp asm("ebp");
-    register uint32_t saved_esp asm("esp");
-    pcb_array[current_pid].saved_ebp = saved_ebp;
-    pcb_array[current_pid].saved_esp = saved_esp;
-    current_pid = new_pid;
-
     // Parse arguments
     int32_t arg_len = (int32_t)strlen ((int8_t *)arg);
-    strncpy ((int8_t *)pcb_array[current_pid].args, (int8_t *)arg, (uint32_t)arg_len);
-    pcb_array[current_pid].args[arg_len] = 0;
-    pcb_array[current_pid].saved_eip = prog_eip;
-    pcb_array[current_pid].terminal = running_term;
-    run_queue[running_term] = &pcb_array[current_pid];
+    strncpy ((int8_t *)current_pcb->args, (int8_t *)arg, (uint32_t)arg_len);
+    current_pcb->args[arg_len] = 0;
+    current_pcb->saved_eip = prog_eip;
+    current_pcb->terminal = running_term;
+    run_queue[running_term] = current_pcb;
     vmem_remap();
 
     sti();
@@ -237,6 +233,7 @@ int32_t sys_execute(const uint8_t* command) {
     // eip = prog_eip
     // esp = 132MB - 4B = 0x083FFFFC
     // 0x2B: USER_DS
+    // TODO: sti() by changing new EFLAGS
     asm volatile ("                     \n\
             movw $0x2B, %%ax            \n\
             movw %%ax, %%ds             \n\
@@ -272,7 +269,7 @@ int32_t sys_execute(const uint8_t* command) {
 *   SIDE EFFECTS:
 */
 int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
-    pcb_t* pcb_ptr = get_pcb_ptr();
+    pcb_t* pcb_ptr = get_pcb_ptr(current_pid);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return SYSCALL_FAIL;
     }
@@ -289,7 +286,7 @@ int32_t sys_read(int32_t fd, void* buf, int32_t nbytes) {
 *   SIDE EFFECTS:
 */
 int32_t sys_write(int32_t fd, const void* buf, int32_t nbytes)  {
-    pcb_t* pcb_ptr = get_pcb_ptr();
+    pcb_t* pcb_ptr = get_pcb_ptr(current_pid);
     if (fd < 0 || fd > 7 || pcb_ptr->fd[fd].flags == 0 || buf == 0 || nbytes < 0) {
         return SYSCALL_FAIL;
     }
@@ -309,7 +306,7 @@ int32_t sys_open(const uint8_t* filename) {
     if (filename == 0 || read_dentry_by_name(filename, &dentry) == -1) {
         return -1;
     }
-    pcb_t* pcb_ptr = get_pcb_ptr();
+    pcb_t* pcb_ptr = get_pcb_ptr(current_pid);
     for (i = 2; i < 8; i++) {
         if(pcb_ptr->fd[i].flags == 0) {
             pcb_ptr->fd[i].flags = 1; // busy
@@ -342,7 +339,7 @@ int32_t sys_close(int32_t fd) {
     if (fd < 2 || fd > 7) {
         return -1;
     }
-    pcb_t* pcb_ptr = get_pcb_ptr();
+    pcb_t* pcb_ptr = get_pcb_ptr(current_pid);
     if (pcb_ptr->fd[fd].flags == 0) {
         return -1; // cannot close unopened file
     }
@@ -364,13 +361,14 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     if (n_bytes <= 0 || buf == NULL) {
         return SYSCALL_FAIL;
     }
-    if (pcb_array[current_pid].args[0] == '\0')
+    pcb_t *current_pcb = get_pcb_ptr(current_pid);
+    if (current_pcb->args[0] == '\0')
     {
         return SYSCALL_FAIL;
     }
     else
     {
-        strncpy((int8_t *)buf, (int8_t *)pcb_array[current_pid].args, n_bytes);
+        strncpy((int8_t *)buf, (int8_t *)current_pcb->args, n_bytes);
         return 0;
     }
 };
@@ -427,18 +425,8 @@ int32_t program_loader(uint32_t inode) {
 }
 
 // use mask to get pcb pointer of current process
-pcb_t* get_pcb_ptr() {
-    // go to head of 8KB block
-    uint32_t mask = 0xFFFFE000;
-    uint32_t current_esp;
-    asm volatile ("     \n\
-        movl %%esp, %0  \n\
-    "                   \
-    : "=r"(current_esp) \
-    :                   \
-    : "memory"          \
-    );
-    return (pcb_t *)(mask & current_esp);
+pcb_t* get_pcb_ptr(uint32_t pid) {
+    return (pcb_t *)(0x00800000 - (pid + 1) * 0x2000);
 }
 
 // function for illegal file operation
@@ -475,8 +463,8 @@ void flush_tlb() {
 void vmem_remap() {
     // set up page directory entry to 4KiB page
     process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
-
-    if (pcb_array[current_pid].terminal == display_term) {
+    pcb_t *current_pcb = get_pcb_ptr(current_pid);
+    if (current_pcb->terminal == display_term) {
         // map to displaying vmem
         // for user
         process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address

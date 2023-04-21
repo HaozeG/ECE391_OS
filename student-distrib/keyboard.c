@@ -58,11 +58,9 @@ void keyboard_handler()
     unsigned char scan_code;
     unsigned char ascii;
 
-    cli();
     scan_code = inb(KEYPORT) & 0xff; // read scan code
     scan_code = inb(KEYPORT) & 0xff; // read scan code
     send_eoi(KEYBOARD_IRQ);
-    sti();
     if (shift_l_buf == 1 || shift_r_buf == 1)
         shift_buf = 1;
     else

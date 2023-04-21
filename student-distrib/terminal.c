@@ -125,11 +125,12 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
  *   SIDE EFFECTS: Change content on screen
  */
 int32_t terminal_switch(int new_term_index) {
-    cli();
     if (new_term_index < 0 || new_term_index > 2) {
-        sti();
         return -1;
     }
+    // clear func key buffer require holding
+    ctrl_buf = 0;
+    alt_buf = 0;
     // store current video memory
     memcpy((void *)(VID_MEM_TERM0 + display_term * fourKB), (void *)VID_MEM_ADDR, fourKB);
     // restore new video memory
@@ -143,7 +144,6 @@ int32_t terminal_switch(int new_term_index) {
         display_term = new_term_index;
         running_term = new_term_index;
         is_base_shell = 1;
-        sti();
         // create shell process for new terminal
         sys_execute((uint8_t *)"shell \n");
         return 0;
@@ -157,26 +157,26 @@ int32_t terminal_switch(int new_term_index) {
     tss.esp0 = (uint32_t)(0x800000 - new_pid * 0x2000 - 4);     // end of 8KB block(4 for return address)
     tss.ss0 = KERNEL_DS;
 
+    pcb_t *current_pcb = get_pcb_ptr(current_pid);
     // save ebp, esp of current process
     register uint32_t saved_ebp asm("ebp");
     register uint32_t saved_esp asm("esp");
-    pcb_array[current_pid].saved_ebp = saved_ebp;
-    pcb_array[current_pid].saved_esp = saved_esp;
+    current_pcb->saved_ebp = saved_ebp;
+    current_pcb->saved_esp = saved_esp;
     current_pid = new_pid;
 
     display_term = new_term_index;
     running_term = new_term_index;
     vmem_remap();
-
+    current_pcb = get_pcb_ptr(new_pid);
     // context switch
     asm volatile ("                     \n\
             movl %0, %%ebp              \n\
             movl %1, %%esp              \n\
             "
             :                         \
-            :  "r"(pcb_array[current_pid].saved_ebp), "r"(pcb_array[current_pid].saved_esp)\
+            :  "r"(current_pcb->saved_ebp), "r"(current_pcb->saved_esp)\
             :  "memory", "cc", "eax"
     );
-    sti();
     return 0;
 }
