@@ -38,6 +38,7 @@
         addl $8, %esp               ;\
         popfl                     ;\
         popal                     ;\
+        popl 0                   ;\
         iret                      ;\
 
 /*
@@ -65,9 +66,9 @@
 dispatch_syscall:
     /* check for valid system call number [1, 10] */
     cmp $1, %eax
-    jng bad_syscall
+    jl bad_syscall
     cmp $MAX_SYSCALL, %eax
-    jnl bad_syscall
+    jg bad_syscall
     // save registers to stack
     pushl %ebp
     pushl %edi
@@ -120,8 +121,9 @@ EXCEPT_LINK_ERRORCODE(VMM_COMMUNICATION_EXCEPTION, common_exception_handler, 29)
 EXCEPT_LINK_ERRORCODE(SECURITY_EXCEPTION, common_exception_handler, 30)
 EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
-INTR_LINK(KEYBOARD_INTERRUPT,keyboard_handler)
-INTR_LINK(RTC_INTERRUPT,rtc_handler)
+INTR_LINK(KEYBOARD_INTERRUPT, keyboard_handler)
+INTR_LINK(RTC_INTERRUPT, rtc_handler)
+INTR_LINK(PIT_INTERRUPT, pit_handler)
 
 /*
     System call jumptable

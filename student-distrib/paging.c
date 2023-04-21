@@ -2,6 +2,7 @@
 #include "lib.h"
 void page_init(uint32_t pid) {
     int i;
+    uint32_t user_addr_physical;
     //memset(page_directory, 0, PAGE_SIZE*sizeof(*page_directory));
     process_paging[pid].page_directory[0].pde_page_table.present = 0;
     process_paging[pid].page_directory[0].pde_page_table.read_write = 0;
@@ -33,7 +34,7 @@ void page_init(uint32_t pid) {
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.present = 1;
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.user_supervisor = 0;
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.global_page = 1;
-    process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.page_base_addr = KERNEL_ADDR >> 22;  
+    process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.page_base_addr = KERNEL_ADDR >> 22;
 
     //map the video memory
     process_paging[pid].page_directory[VID_MEM_ADDR >> 22].pde_page_table.present = 1;
@@ -54,15 +55,45 @@ void page_init(uint32_t pid) {
         process_paging[pid].page_table[i].avail = 0;
         process_paging[pid].page_table[i].page_base_addr = 0;
     }
-    // (VIDEO_MEM_ADDR >> 12) & 0x03FF
+    /*generically fill vidmap Page Table*/
+    for (i = 0; i < PAGE_SIZE; i++){
+        process_paging[pid].pte_vidmap[i].page_base_addr = 0;
+        process_paging[pid].pte_vidmap[i].present = 0;
+        process_paging[pid].pte_vidmap[i].read_write = 1;
+        process_paging[pid].pte_vidmap[i].user_supervisor = 0;
+        process_paging[pid].pte_vidmap[i].write_through = 0;
+        process_paging[pid].pte_vidmap[i].cache_disabled = 1;
+        process_paging[pid].pte_vidmap[i].accessed = 0;
+        process_paging[pid].pte_vidmap[i].dirty = 0;
+        process_paging[pid].pte_vidmap[i].page_table_attribute_index = 0;
+        process_paging[pid].pte_vidmap[i].global_page = 0;
+        process_paging[pid].pte_vidmap[i].avail = 0;
+    }
     // set other fields of the pagetable
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].present = 1;
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].read_write = 1;
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].page_base_addr = VID_MEM_TERM0 >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].page_base_addr = VID_MEM_TERM1 >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].page_base_addr = VID_MEM_TERM2 >> 12;
+    // did not mark as present
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 1;
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = ((uint32_t)process_paging[pid].pte_vidmap) >> 12; // shift from 32 bits to 20 bits
+    //page of the vidmap page table
+    process_paging[pid].pte_vidmap[0].present = 1;
+    process_paging[pid].pte_vidmap[0].user_supervisor = 1;
+    process_paging[pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
 
     // map user program image
     // only map one 4MB page: maximum file size less than 4MB
-    uint32_t user_addr_physical = 0x800000 + (pid * 0x400000);  // 8MB + (process number * 4MB)
+    user_addr_physical = (fourMB << 1) + (pid * fourMB);  // 8MB + (process number * 4MB)
     process_paging[pid].page_directory[USER_ADDR_VIRTUAL >> 22].pde_4mb_page.present = 1;
     process_paging[pid].page_directory[USER_ADDR_VIRTUAL >> 22].pde_4mb_page.user_supervisor = 1;
     process_paging[pid].page_directory[USER_ADDR_VIRTUAL >> 22].pde_4mb_page.page_base_addr = user_addr_physical >> 22;

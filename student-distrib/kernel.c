@@ -14,6 +14,7 @@
 #include "filesys.h"
 #include "rtc.h"
 #include "keyboard.h"
+#include "pit.h"
 
 // #define RUN_TESTS
 
@@ -157,8 +158,8 @@ void entry(unsigned long magic, unsigned long addr) {
     // init keyboard device to IRQ 1
     enable_irq(KEYBOARD_VEC - IRQ_BASE_VEC);
     // kbd_init();
-
     rtc_init();
+    pit_init();
 
     printf("Enabling Interrupts\n");
     sti();
@@ -168,7 +169,7 @@ void entry(unsigned long magic, unsigned long addr) {
     launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
-    sys_execute((uint8_t *)"shell");
+    sys_execute((uint8_t *)"shell \n");
     /* Spin (nicely, so we don't chew up cycles) */
     asm volatile (".1: hlt; jmp .1;");
 }

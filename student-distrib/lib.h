@@ -7,6 +7,10 @@
 
 #include "types.h"
 
+#define NUM_TERM 3
+// Cursor position on screen
+extern int screen_x[NUM_TERM];
+extern int screen_y[NUM_TERM];
 void cursor_enable();
 void cursor_disable();
 void cursor_update(int x, int y);
@@ -16,6 +20,7 @@ uint16_t cursor_pos();
 void set_color(int8_t attr, int8_t select);
 int32_t printf(int8_t *format, ...);
 void putc(uint8_t c);
+void putc_kbd(uint8_t c);
 void delc();
 int32_t puts(int8_t *s);
 int8_t *itoa(uint32_t value, int8_t* buf, int32_t radix);
@@ -29,8 +34,8 @@ void* memset_dword(void* s, int32_t c, uint32_t n);
 void* memcpy(void* dest, const void* src, uint32_t n);
 void* memmove(void* dest, const void* src, uint32_t n);
 int32_t strncmp(const int8_t* s1, const int8_t* s2, uint32_t n);
-int8_t* strcpy(int8_t* dest, const int8_t*src);
-int8_t* strncpy(int8_t* dest, const int8_t*src, uint32_t n);
+int32_t strcpy(int8_t* dest, const int8_t*src, uint32_t n);
+int32_t strncpy(int8_t* dest, const int8_t*src, uint32_t n);
 
 /* Userspace address-check functions */
 int32_t bad_userspace_addr(const void* addr, int32_t len);

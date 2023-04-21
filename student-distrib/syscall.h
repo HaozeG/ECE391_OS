@@ -2,6 +2,8 @@
 #define SYSCALL_H_
 #include "lib.h"
 #include "filesys.h"
+#include "types.h"
+#include "paging.h"
 
 #define SYSCALL_FAIL -1
 // System call numbers
@@ -16,6 +18,7 @@
 #define SYS_SET_HANDLER  9
 #define SYS_SIGRETURN  10
 
+extern uint8_t exp_occured;
 // all system calls supported
 extern int32_t sys_halt(uint8_t status);
 extern int32_t sys_execute(const uint8_t* command);
@@ -32,13 +35,13 @@ extern uint32_t current_pid;
 int32_t program_loader(uint32_t inode);
 
 typedef struct file_operation_table {
-    int32_t (*open)(const uint8_t* filename); 
+    int32_t (*open)(const uint8_t* filename);
+    int32_t (*close)(int32_t fd);
     int32_t (*read)(int32_t fd, void* buf, int32_t nbytes);
     int32_t (*write)(int32_t fd, const void* buf, int32_t nbytes);
-    int32_t (*close)(int32_t fd); 
 } fot_t;
 
-typedef struct file_descriptor { 
+typedef struct file_descriptor {
     fot_t* file_operations_table_pointer;
     uint32_t inode;
     uint32_t file_position;
@@ -48,17 +51,26 @@ typedef struct file_descriptor {
 // PCB - start of 8KB
 typedef struct {
     fd_t fd[8];
-    uint32_t pid; 
+    uint32_t pid;
     uint32_t parent_pid;
     uint32_t saved_esp;
     uint32_t saved_ebp;
+    uint32_t saved_eip;
+    uint8_t terminal;
+    uint8_t args[128];
 } pcb_t;
 
-
+int32_t illegal(int32_t fd, void* buf, int32_t nbytes);
 int32_t open(const uint8_t* filename);
 int32_t read(int32_t fd, void* buf, int32_t nbytes);
 int32_t write(int32_t fd, const void* buf, int32_t nbytes);
-int32_t close(int32_t fd); 
-pcb_t* get_pcb_ptr();
+int32_t close(int32_t fd);
+pcb_t* get_pcb_ptr(uint32_t pid);
+void flush_tlb();
+void vmem_remap();
+
+extern uint8_t is_base_shell;
+extern uint32_t current_pid;
+extern uint8_t pid_array[NUM_PROCESS_MAX];
 
 #endif

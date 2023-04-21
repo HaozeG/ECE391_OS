@@ -12,6 +12,8 @@
 
 
 volatile int flag_wait = 0; //used to communicate when to block interrupt
+volatile int ticker;  //  used to count the number of ints generated to set the virtual flag. 
+volatile int threshold; // once the ticker reaches this, generate the virtual interrupt
 /*
 * rtc_init
 *   DESCRIPTION: Initialize RTC, turn on the IRQ
@@ -21,20 +23,19 @@ volatile int flag_wait = 0; //used to communicate when to block interrupt
 *   SIDE EFFECTS: none
 */
 void rtc_init(void) {
-    cli();
+    //cli();
     // Turn on with 1024Hz
     outb(RTC_REG_B, RTC_PORT);      //select register B and disable NMI
     char prev = inb(RTC_DATA);        //read current value at register B
     outb(RTC_REG_B, RTC_PORT);        //set the index again
     outb(prev | 0x40, RTC_DATA);       //write previous value ORed with 0x40. turns on six bit of register B
-   
-    // // set rate
-    // outb(RTC_REG_A, RTC_PORT);            //set index to reg A
-    // prev = inb(RTC_DATA);
-    // outb(RTC_REG_A, RTC_PORT);            //reset index to A
-    // // outb((prev & 0xF0) | 0x06, RTC_DATA);           //frequency set to 1024
-    // outb(0x06, RTC_DATA);           //frequency set to 1024
-    set_freq(2);          //frequency set to 2 which is min
+    ticker = 0;
+    threshold = 1; // default rate of 1024 
+    // set rate
+    outb(RTC_REG_A, RTC_PORT);            //set index to reg A
+    prev = inb(RTC_DATA);
+    outb(RTC_REG_A, RTC_PORT);          //setting RS values
+    //outb( (prev & 0xF0) | 0x0F, RTC_DATA);  //set initial frequency to 2Hz --> allen: the default rate should already be 1024 hz
     enable_irq(RTC_VEC - IRQ_BASE_VEC);
 }
 
@@ -47,10 +48,24 @@ void rtc_init(void) {
 *   SIDE EFFECTS: none
 */
 void rtc_handler(void) {
+    // ** VIRTUALIZING THIS **  
+    //printf("RTC GENERATED");
+    if (ticker < threshold) {
+        ticker++;
+    } else {
+        ticker = 0;
+        flag_wait = 1;
+    }
     outb(RTC_REG_C, RTC_PORT);  //selects register C
     inb(RTC_DATA);    //throw away contents
-    send_eoi(RTC_VEC - IRQ_BASE_VEC); //sends eoi after servicing interrupt
-    flag_wait = 1;    //tells read to block interrupt
+    send_eoi(RTC_VEC - IRQ_BASE_VEC);
+
+    // cli();
+    // outb(RTC_REG_C, RTC_PORT);  //selects register C
+    // inb(RTC_DATA);    //throw away contents
+    // send_eoi(RTC_VEC - IRQ_BASE_VEC); //sends eoi after servicing interrupt
+    // flag_wait = 1;    //tells read to block interrupt
+    // sti();
 }
 
 
@@ -63,7 +78,8 @@ void rtc_handler(void) {
 */
 int32_t rtc_open(const uint8_t* filename)
 {
-    set_freq(2);  //setting frequency to 2Hz
+    // set_freq(2);  //setting frequency to 2Hz ** I AM VIRTUALIZING IT **
+    threshold = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC. 
     return 0;
 }
 
@@ -89,8 +105,10 @@ int32_t rtc_close(int32_t fd)
 *   SIDE EFFECTS: none
 */
 int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {    
+    //sti();
     flag_wait = 0;
     while(flag_wait == 0);     //used to wait until interrupt
+    //flag_wait = 0;
     return 0;
 }
 
@@ -107,16 +125,16 @@ int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {
    
     if((nbytes != 4) || ((int32_t)buf == NULL))   //checks to make sure within the size
         return -1;
-    else
-        freq = *((int32_t*)buf);
+    
+    freq = *((int32_t*)buf);
+    if (freq !=0 && ((freq & (freq - 1)) == 0)) {
+        threshold = 1024 / freq; 
+        return 0;
+    }
+    return -1; 
 
 
-    cli();
-    set_freq(freq);       //setting the frequency
-    sti();
-
-
-    return nbytes;
+    //set_freq(freq);       //setting the frequency
 }
 
 
@@ -132,8 +150,10 @@ void set_freq(int32_t freq_final)
     char freq;
     unsigned char prev;
    
+    cli();
     outb(RTC_REG_A, RTC_PORT);    //Register A
     prev = inb(RTC_DATA);
+    sti();
    
     switch(freq_final){
         case 8192:
@@ -173,6 +193,8 @@ void set_freq(int32_t freq_final)
        
         default: return;
     }
+    cli();
     outb(RTC_REG_A, RTC_PORT);          //setting RS values
     outb( (prev & 0xF0) | freq, RTC_DATA);  //masking value
+    sti();
 }

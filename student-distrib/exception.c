@@ -1,5 +1,6 @@
 #include "exception.h"
 #include "types.h"
+#include "syscall.h"
 
 // Array of exception messages
 static char *exception_msg[32] = {
@@ -53,6 +54,7 @@ static char *exception_msg[32] = {
 */
 void common_exception_handler(int32_t num, int32_t error_code) {
     // clear();
+    set_color(0x0C, 1);
     printf("%s\n", exception_msg[num]);
     if (error_code != 0) {
         printf("Error code: %x\n", error_code);
@@ -88,7 +90,11 @@ void common_exception_handler(int32_t num, int32_t error_code) {
             printf("- Error virtual address: 0x%x\n", error_address);
         }
     }
+    set_color(0x07, 1);
+    // set exp_occured to indicate exception
+    exp_occured = 1;
+    sys_halt(0);
 
-    do {
-    }while (1);
+    // do {
+    // }while (1);
 }
