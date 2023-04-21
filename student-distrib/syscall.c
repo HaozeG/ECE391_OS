@@ -44,7 +44,6 @@ int32_t sys_halt(uint8_t status) {
         pid_array[current_pid] = 0;
         is_base_shell = 1;
         run_queue[running_term] = 0;
-        sti();
         sys_execute((uint8_t *)"shell \n");
         // should never reach here
         return SYSCALL_FAIL;
@@ -81,7 +80,7 @@ int32_t sys_halt(uint8_t status) {
     current_pid = parent_pid;
     vmem_remap();
     current_pcb = get_pcb_ptr(current_pid);
-    sti();
+    // sti();
     // return to execute
     asm volatile ("                     \n\
             andl $0, %%eax             \n\
@@ -257,7 +256,7 @@ int32_t sys_execute(const uint8_t* command) {
             :  "b"(USER_DS), "c"(USER_CS), "d"(prog_eip)\
             :  "memory", "cc", "eax"
     );
-
+    sti();
     // halt return to here
     return return_val;
 }
