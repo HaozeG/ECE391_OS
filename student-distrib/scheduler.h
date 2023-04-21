@@ -9,6 +9,6 @@
 
 pcb_t *run_queue[NUM_ACTIVE_PROC];
 
-int32_t schedule();
+void schedule();
 
 #endif

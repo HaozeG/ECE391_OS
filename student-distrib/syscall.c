@@ -7,6 +7,7 @@
 #include "keyboard.h"
 #include "terminal.h"
 #include "rtc.h"
+#include "idt.h"
 
 // variable to know which is current process
 uint32_t current_pid = 1;
@@ -159,6 +160,8 @@ int32_t sys_execute(const uint8_t* command) {
     pid_array[0] = 1;       // "kernel process", never return to pid 0
     cli();
     if (is_base_shell) {
+        // enable after having the first base shell
+        enable_irq(PIT_VEC - IRQ_BASE_VEC);
         new_pid = running_term + 1;
         is_base_shell = 0;
     } else {
@@ -463,8 +466,7 @@ void flush_tlb() {
 void vmem_remap() {
     // set up page directory entry to 4KiB page
     process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
-    pcb_t *current_pcb = get_pcb_ptr(current_pid);
-    if (current_pcb->terminal == display_term) {
+    if (running_term == display_term) {
         // map to displaying vmem
         // for user
         process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
@@ -478,4 +480,5 @@ void vmem_remap() {
         process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;
     }
     flush_tlb();
+
 }

@@ -131,11 +131,10 @@ int32_t terminal_switch(int new_term_index) {
     // clear func key buffer require holding
     ctrl_buf = 0;
     alt_buf = 0;
-    // store current video memory
-    memcpy((void *)(VID_MEM_TERM0 + display_term * fourKB), (void *)VID_MEM_ADDR, fourKB);
-    // restore new video memory
-    memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + new_term_index * fourKB), fourKB);
-    cursor_update(screen_x[new_term_index], screen_y[new_term_index]);
+    if (running_term == display_term) {
+        // store current video memory
+        memcpy((void *)(VID_MEM_TERM0 + display_term * fourKB), (void *)VID_MEM_ADDR, fourKB);
+    }
 
     // switch process to the active one of the new terminal
     uint32_t new_pid = 0;
@@ -168,6 +167,9 @@ int32_t terminal_switch(int new_term_index) {
     display_term = new_term_index;
     running_term = new_term_index;
     vmem_remap();
+    // restore new video memory
+    memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + display_term * fourKB), fourKB);
+    cursor_update(screen_x[display_term], screen_y[display_term]);
     current_pcb = get_pcb_ptr(new_pid);
     // context switch
     asm volatile ("                     \n\

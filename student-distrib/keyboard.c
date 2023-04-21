@@ -114,7 +114,8 @@ void keyboard_handler()
             if (count_char[display_term] < MAX_BUF) {
                 kbd_buffer[display_term][count_char[display_term]] = '\n';
                 count_char[display_term]++;
-                putc('\n');
+                // TODO: may not be the correct solution
+                putc_kbd('\n');
             }
             break;
         case CAPS:
@@ -216,7 +217,7 @@ void keyboard_handler()
             // tab
             if (scan_code == TAB)
             {
-                putc('\t');
+                putc_kbd('\t');
                 kbd_buffer[display_term][count_char[display_term]] = '\t';
                 count_char[display_term]++;
                 return;
@@ -225,7 +226,7 @@ void keyboard_handler()
             if (ascii != 0)
             {
                 // printf("mode = %d, shift = %d, count = %d\n", mode,shift_buf,count_char);
-                putc(ascii);                    // write char to screen
+                putc_kbd(ascii);                    // write char to screen
                 kbd_buffer[display_term][count_char[display_term]] = ascii; // write to kbd buffer
                 count_char[display_term]++;
             }
@@ -247,7 +248,7 @@ void handle_backspace()
     {
         return;
     }
-    putc('\b');
+    putc_kbd('\b');
     count_char[display_term]--;
     // printf("%d", count_char);
     return;
