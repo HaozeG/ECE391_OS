@@ -3,6 +3,7 @@
 
 #include "lib.h"
 #include "keyboard.h"
+#include "terminal.h"
 
 #define VIDEO 0xB8000
 #define NUM_COLS 80
@@ -19,8 +20,8 @@ int8_t ATTRIB_BACK = 0x0;
 #define ATTRIB_TEXT ((ATTRIB_FORE & 0x0F) | ((ATTRIB_BACK & 0x0F) << 4))
 
 // Cursor position on screen
-int screen_x;
-int screen_y;
+int screen_x[NUM_TERM];
+int screen_y[NUM_TERM];
 static char *video_mem = (char *)VIDEO;
 
 // Cursor related ports and registers
@@ -144,9 +145,9 @@ void clear(void)
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB_BG;
     }
     // reset to top left corner
-    screen_x = 0;
-    screen_y = 0;
-    cursor_update(screen_x, screen_y);
+    screen_x[display_term] = 0;
+    screen_y[display_term] = 0;
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* Standard printf().
@@ -281,7 +282,7 @@ int32_t printf(int8_t *format, ...)
         }
         buf++;
     }
-    cursor_update(screen_x, screen_y);
+    cursor_update(screen_x[display_term], screen_y[display_term]);
     return (buf - format);
 }
 
@@ -309,13 +310,13 @@ void putc(uint8_t c)
     int i;
     if (c == '\n' || c == '\r')
     {
-        if ((screen_y + 1) % NUM_ROWS == 0)
+        if ((screen_y[display_term] + 1) % NUM_ROWS == 0)
         {
             scroll();
         }
-        screen_y = (screen_y + 1) % NUM_ROWS;
-        screen_x = 0;
-        cursor_update(screen_x, screen_y);
+        screen_y[display_term] = (screen_y[display_term] + 1) % NUM_ROWS;
+        screen_x[display_term] = 0;
+        cursor_update(screen_x[display_term], screen_y[display_term]);
     }
     else if (c == '\t') // handle tab
     {
@@ -326,7 +327,7 @@ void putc(uint8_t c)
     }
     else if (c == '\b') // hanlde backspace
     {
-        if (kbd_buffer[count_char - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
+        if (kbd_buffer[display_term][count_char[display_term] - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
         {
             for (i = 0; i < 4; i++)
             {
@@ -336,20 +337,23 @@ void putc(uint8_t c)
         else
             delc();
     }
+    else if (c == '\0') {
+        return;
+    }
     else
     {
         // check if needs scrolling before output new char
-        if (screen_y != 0 && (screen_y + ((screen_x + 1) / NUM_COLS)) % NUM_ROWS == 0)
+        if (screen_y[display_term] != 0 && (screen_y[display_term] + ((screen_x[display_term] + 1) / NUM_COLS)) % NUM_ROWS == 0)
         {
             scroll();
         }
-        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
-        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_TEXT;
-        screen_x++;
-        cursor_update(screen_x, screen_y);
+        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1)) = c;
+        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1) + 1) = ATTRIB_TEXT;
+        screen_x[display_term]++;
+        cursor_update(screen_x[display_term], screen_y[display_term]);
         // Auto wrap(increment y before resetting x)
-        screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-        screen_x %= NUM_COLS;
+        screen_y[display_term] = (screen_y[display_term] + (screen_x[display_term] / NUM_COLS)) % NUM_ROWS;
+        screen_x[display_term] %= NUM_COLS;
     }
 }
 
@@ -369,11 +373,11 @@ void scroll()
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB_BG;
     }
     // Update cursor
-    if (screen_y != 0)
+    if (screen_y[display_term] != 0)
     {
-        screen_y--;
+        screen_y[display_term]--;
     }
-    cursor_update(screen_x, screen_y);
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* void delc();
@@ -383,21 +387,21 @@ void scroll()
  *           Should only called by keyboard handler*/
 void delc()
 {
-    if (screen_x == 0)
+    if (screen_x[display_term] == 0)
     {
-        if (screen_y != 0)
+        if (screen_y[display_term] != 0)
         {
-            screen_x = NUM_COLS - 1; // end of row
-            screen_y--;
+            screen_x[display_term] = NUM_COLS - 1; // end of row
+            screen_y[display_term]--;
         }
     }
     else
     {
-        screen_x--;
+        screen_x[display_term]--;
     }
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_BG;
-    cursor_update(screen_x, screen_y);
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1)) = ' ';
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1) + 1) = ATTRIB_BG;
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);

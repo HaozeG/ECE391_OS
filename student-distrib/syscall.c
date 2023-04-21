@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include "scheduler.h"
 #include "x86_desc.h"
 #include "lib.h"
 #include "filesys.h"
@@ -11,6 +12,7 @@
 uint32_t current_pid = 1;
 // variable to know if exception occured
 uint8_t exp_occured = 0;
+uint8_t is_base_shell = 1;
 
 // array of processes (to find available process number)
 uint8_t pid_array[NUM_PROCESS_MAX];
@@ -35,11 +37,15 @@ static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (ui
 *   SIDE EFFECTS: Go to execute but not caller
 */
 int32_t sys_halt(uint8_t status) {
-    // do not halt process 0 or 1
-    if (current_pid == 0 || current_pid == 1) {
+    cli();
+    // do not halt base shell of each terminal
+    if (current_pid == (running_term + 1) || current_pid == 0) {
         printf("--RESTART BASE SHELL--\n");
         // restart shell
         pid_array[current_pid] = 0;
+        is_base_shell = 1;
+        run_queue[running_term] = 0;
+        sti();
         sys_execute((uint8_t *)"shell \n");
         // should never reach here
         return SYSCALL_FAIL;
@@ -51,6 +57,8 @@ int32_t sys_halt(uint8_t status) {
     pcb_array[current_pid].parent_pid = 0;
     pcb_array[current_pid].saved_ebp = 0;
     pcb_array[current_pid].saved_esp = 0;
+    pcb_array[current_pid].saved_eip = 0;
+    pcb_array[current_pid].terminal = 0;
     // clear fd
     int i;
     for (i = 0; i < 8; i++) {
@@ -70,16 +78,12 @@ int32_t sys_halt(uint8_t status) {
     page_init(parent_pid);
     flush_tlb();
     // undo vidmap of previous process
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 0;  
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 0;
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = 0; 
-    // page of the vidmap page table
-    process_paging[current_pid].pte_vidmap[0].present = 0;
-    process_paging[current_pid].pte_vidmap[0].user_supervisor = 0;
-    process_paging[current_pid].pte_vidmap[0].page_base_addr = 0; 
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 0;
+    run_queue[running_term] = &pcb_array[parent_pid];
 
     current_pid = parent_pid;
+    vmem_remap();
+    sti();
     // return to execute
     asm volatile ("                     \n\
             andl $0, %%eax             \n\
@@ -108,7 +112,7 @@ int32_t sys_halt(uint8_t status) {
 *   SIDE EFFECTS: context switch to new process
 */
 int32_t sys_execute(const uint8_t* command) {
-    uint32_t new_pid;
+    uint32_t new_pid = 0;
     int32_t prog_eip;
     int32_t return_val;
     int32_t i;
@@ -155,22 +159,27 @@ int32_t sys_execute(const uint8_t* command) {
     }
 
     // assign process number based on pid_array
-    i = 0;
     pid_array[0] = 1;       // "kernel process", never return to pid 0
-    // pid = 1 for base shell
-    for (i = 1; i < NUM_PROCESS_MAX; i++) {
-        if (pid_array[i] == 0) {
-            pid_array[i] = 1;
-            new_pid = i;
-            break;
+    cli();
+    if (is_base_shell) {
+        new_pid = running_term + 1;
+        is_base_shell = 0;
+    } else {
+        i = 0;
+        // pid = 1, 2, 3 for base shell of terminal 0, 1, 2
+        for (i = NUM_TERM + 1; i < NUM_PROCESS_MAX; i++) {
+            if (pid_array[i] == 0) {
+                pid_array[i] = 1;
+                new_pid = i;
+                break;
+            }
+        }
+        if (i == NUM_PROCESS_MAX || i == 0) {
+            printf("CANNOT CREATE MORE PROCESS!\n");
+            sti();
+            return SYSCALL_FAIL;
         }
     }
-    if (i == NUM_PROCESS_MAX || i == 0) {
-        printf("CANNOT CREATE MORE PROCESS!\n");
-        return SYSCALL_FAIL;
-    }
-
-    cli();
     // set up paging
     page_init(new_pid);
     flush_tlb();
@@ -198,6 +207,7 @@ int32_t sys_execute(const uint8_t* command) {
     pcb_array[new_pid].fd[1].file_operations_table_pointer = (fot_t*)stdout_table;
     // store parent process id
     pcb_array[new_pid].parent_pid = current_pid;
+    pcb_array[new_pid].pid = new_pid;
     // put pointer to pcb to the start of 8KB block(8MB - (pid + 1)*8KB)
     pcb_t* pcb_start = (pcb_t *)(0x00800000 - (new_pid + 1) * 0x2000);
     *pcb_start = pcb_array[new_pid];
@@ -216,6 +226,10 @@ int32_t sys_execute(const uint8_t* command) {
     int32_t arg_len = (int32_t)strlen ((int8_t *)arg);
     strncpy ((int8_t *)pcb_array[current_pid].args, (int8_t *)arg, (uint32_t)arg_len);
     pcb_array[current_pid].args[arg_len] = 0;
+    pcb_array[current_pid].saved_eip = prog_eip;
+    pcb_array[current_pid].terminal = running_term;
+    run_queue[running_term] = &pcb_array[current_pid];
+    vmem_remap();
 
     sti();
     // context switch
@@ -344,7 +358,7 @@ int32_t sys_close(int32_t fd) {
 *   INPUTS: buf - pointer to user level buffer
 *           n_bytes - maximum bytes to read
 *   RETURN VALUE: 0 on success, -1 on failure
-*   SIDE EFFECTS: 
+*   SIDE EFFECTS:
 */
 int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
     if (n_bytes <= 0 || buf == NULL) {
@@ -372,21 +386,11 @@ int32_t sys_vidmap(uint8_t** screen_start) {
     if(screen_start == NULL || (uint32_t)screen_start < USER_ADDR_VIRTUAL || (uint32_t)screen_start > (USER_ADDR_VIRTUAL + fourMB - 1)) {
         return SYSCALL_FAIL;; //check if screen is within bounds
     }
-    
-    // set up page directory entry to 4KiB page
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;                 //34 is the video index
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 1;
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = ((uint32_t)process_paging[current_pid].pte_vidmap) >> 12; //shift from 32 bits to 20 bits
-
-    //page of the vidmap page table
-    process_paging[current_pid].pte_vidmap[0].present = 1;
-    process_paging[current_pid].pte_vidmap[0].user_supervisor = 1;
-    process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
-    flush_tlb();
-
+    cli();
+    vmem_remap();
     // store virtual video memory address as a pointer in user space
     *screen_start = (uint8_t*)(USER_ADDR_VIRTUAL + fourMB);
+    sti();
     return 0;
 };
 
@@ -459,4 +463,31 @@ void flush_tlb() {
             :                           \
             :  "eax"
     );
+}
+
+/*
+* vmem_remap
+*   DESCRIPTION: Remap virtual memory relating to video memory
+*   INPUTS: none
+*   RETURN VALUE: none
+*   SIDE EFFECTS: Change virtual video memory based on current_pid
+*/
+void vmem_remap() {
+    // set up page directory entry to 4KiB page
+    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
+
+    if (pcb_array[current_pid].terminal == display_term) {
+        // map to displaying vmem
+        // for user
+        process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
+        // for kernel
+        process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
+    } else {
+        // map to non-displaying vmem
+        // for user
+        process_paging[current_pid].pte_vidmap[0].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;   //video memory address
+        // for kernel
+        process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;
+    }
+    flush_tlb();
 }

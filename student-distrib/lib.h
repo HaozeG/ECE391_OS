@@ -7,9 +7,10 @@
 
 #include "types.h"
 
+#define NUM_TERM 3
 // Cursor position on screen
-extern int screen_x;
-extern int screen_y;
+extern int screen_x[NUM_TERM];
+extern int screen_y[NUM_TERM];
 void cursor_enable();
 void cursor_disable();
 void cursor_update(int x, int y);
