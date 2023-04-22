@@ -2,7 +2,8 @@
 #include "i8259.h"
 #include "rtc.h"
 #include "idt.h"
-
+#include "terminal.h"
+#include "scheduler.h"
 
 #define RTC_PORT 0x70 //RTC port
 #define RTC_DATA 0x71 //RTC data port
@@ -11,9 +12,9 @@
 #define RTC_REG_C 0x8C //register C            
 
 
-volatile int flag_wait = 0; //used to communicate when to block interrupt
-volatile int ticker;  //  used to count the number of ints generated to set the virtual flag. 
-volatile int threshold; // once the ticker reaches this, generate the virtual interrupt
+volatile int flag_wait[NUM_TERM] = {0, 0, 0}; //used to communicate when to block interrupt
+volatile int ticker[NUM_TERM];  //  used to count the number of ints generated to set the virtual flag. 
+volatile int threshold[NUM_TERM]; // once the ticker reaches this, generate the virtual interrupt
 /*
 * rtc_init
 *   DESCRIPTION: Initialize RTC, turn on the IRQ
@@ -29,8 +30,11 @@ void rtc_init(void) {
     char prev = inb(RTC_DATA);        //read current value at register B
     outb(RTC_REG_B, RTC_PORT);        //set the index again
     outb(prev | 0x40, RTC_DATA);       //write previous value ORed with 0x40. turns on six bit of register B
-    ticker = 0;
-    threshold = 1; // default rate of 1024 
+    int i;
+    for (i = 0; i < NUM_TERM; i++) {
+        ticker[i] = 0;
+        threshold[i] = 1; // default rate of 1024 
+    }
     // set rate
     outb(RTC_REG_A, RTC_PORT);            //set index to reg A
     prev = inb(RTC_DATA);
@@ -50,15 +54,18 @@ void rtc_init(void) {
 void rtc_handler(void) {
     // ** VIRTUALIZING THIS **  
     //printf("RTC GENERATED");
-    if (ticker < threshold) {
-        ticker++;
-    } else {
-        ticker = 0;
-        flag_wait = 1;
+    int i;
+    send_eoi(RTC_VEC - IRQ_BASE_VEC);
+    for (i = 0; i < NUM_TERM; i++) {
+        if (ticker[i] < threshold[i]) {
+            ticker[i]++;
+        } else {
+            ticker[i] = 0;
+            flag_wait[i] = 1;
+        }
     }
     outb(RTC_REG_C, RTC_PORT);  //selects register C
     inb(RTC_DATA);    //throw away contents
-    send_eoi(RTC_VEC - IRQ_BASE_VEC);
 
     // cli();
     // outb(RTC_REG_C, RTC_PORT);  //selects register C
@@ -78,8 +85,10 @@ void rtc_handler(void) {
 */
 int32_t rtc_open(const uint8_t* filename)
 {
+    schedule_disable = 1;
     // set_freq(2);  //setting frequency to 2Hz ** I AM VIRTUALIZING IT **
-    threshold = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC. 
+    threshold[running_term] = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC. 
+    schedule_disable = 0;
     return 0;
 }
 
@@ -105,10 +114,12 @@ int32_t rtc_close(int32_t fd)
 *   SIDE EFFECTS: none
 */
 int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {    
-    //sti();
-    flag_wait = 0;
-    while(flag_wait == 0);     //used to wait until interrupt
-    //flag_wait = 0;
+    schedule_disable = 1;
+    sti();
+    flag_wait[running_term] = 0;
+    while(flag_wait[running_term] == 0);     //used to wait until interrupt
+    flag_wait[running_term] = 0;
+    schedule_disable = 0;
     return 0;
 }
 
@@ -122,15 +133,20 @@ int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {
 */
 int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {  
     int32_t freq;
+    schedule_disable = 1;
    
-    if((nbytes != 4) || ((int32_t)buf == NULL))   //checks to make sure within the size
+    if((nbytes != 4) || ((int32_t)buf == NULL)){ //checks to make sure within the size
+        schedule_disable = 0;
         return -1;
+    }   
     
     freq = *((int32_t*)buf);
     if (freq !=0 && ((freq & (freq - 1)) == 0)) {
-        threshold = 1024 / freq; 
+        threshold[running_term] = 1024 / freq; 
+        schedule_disable = 0;
         return 0;
     }
+    schedule_disable = 0;
     return -1; 
 
 
