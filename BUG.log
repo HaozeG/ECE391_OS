@@ -167,3 +167,17 @@ Solution:
     Reserve several pids for base shell process of each terminal. Use 
     those pid numbers as new_pid when switching to certain terminal for 
     the first time.
+
+<--------------------------------------------------------->
+                          BUG 10                          
+<--------------------------------------------------------->
+Time:
+    2023.4.20.
+Creator:
+    Haoze Gao.
+Description:
+    Exception happen before setting up the base shell of terminal 1.
+    PIT triggers schedule before setting up the context of process 1
+    i.e. nothing in run_queue.
+Solution:
+    Check in scheduler if anything already in run_queue.
