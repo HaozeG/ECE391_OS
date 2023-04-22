@@ -7,9 +7,10 @@
 
 #include "types.h"
 
+#define NUM_TERM 3
 // Cursor position on screen
-extern int screen_x;
-extern int screen_y;
+extern int screen_x[NUM_TERM];
+extern int screen_y[NUM_TERM];
 void cursor_enable();
 void cursor_disable();
 void cursor_update(int x, int y);
@@ -19,12 +20,15 @@ uint16_t cursor_pos();
 void set_color(int8_t attr, int8_t select);
 int32_t printf(int8_t *format, ...);
 void putc(uint8_t c);
+void putc_display(uint8_t c);
 void delc();
+void delc_display();
 int32_t puts(int8_t *s);
 int8_t *itoa(uint32_t value, int8_t* buf, int32_t radix);
 int8_t *strrev(int8_t* s);
 uint32_t strlen(const int8_t* s);
 void clear(void);
+void clear_display(void);
 
 void* memset(void* s, int32_t c, uint32_t n);
 void* memset_word(void* s, int32_t c, uint32_t n);

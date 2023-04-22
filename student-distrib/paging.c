@@ -34,7 +34,7 @@ void page_init(uint32_t pid) {
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.present = 1;
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.user_supervisor = 0;
     process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.global_page = 1;
-    process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.page_base_addr = KERNEL_ADDR >> 22;  
+    process_paging[pid].page_directory[KERNEL_ADDR >> 22].pde_4mb_page.page_base_addr = KERNEL_ADDR >> 22;
 
     //map the video memory
     process_paging[pid].page_directory[VID_MEM_ADDR >> 22].pde_page_table.present = 1;
@@ -73,6 +73,23 @@ void page_init(uint32_t pid) {
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].present = 1;
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].read_write = 1;
     process_paging[pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM0 >> 12].page_base_addr = VID_MEM_TERM0 >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM1 >> 12].page_base_addr = VID_MEM_TERM1 >> 12;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].present = 1;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].read_write = 1;
+    process_paging[pid].page_table[VID_MEM_TERM2 >> 12].page_base_addr = VID_MEM_TERM2 >> 12;
+    // did not mark as present
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_size = 0;
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.user_supervisor = 1;
+    process_paging[pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.page_base_addr = ((uint32_t)process_paging[pid].pte_vidmap) >> 12; // shift from 32 bits to 20 bits
+    //page of the vidmap page table
+    process_paging[pid].pte_vidmap[0].present = 1;
+    process_paging[pid].pte_vidmap[0].user_supervisor = 1;
+    process_paging[pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
 
     // map user program image
     // only map one 4MB page: maximum file size less than 4MB

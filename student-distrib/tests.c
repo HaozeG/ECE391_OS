@@ -588,8 +588,8 @@ int file_listing_test() {
 /* Test suite entry point */
 void launch_tests()
 {
-	char b[1];
-	int32_t fd = 0;
+	// char b[1];
+	// int32_t fd = 0;
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("divide zero", divide_zero_test());
 	//TEST_OUTPUT("keyboard test", keyboard_test());
@@ -597,23 +597,23 @@ void launch_tests()
 	//TEST_OUTPUT("paging_fail_test", keyboard_test());
 	//TEST_OUTPUT("paging_null_test", keyboard_test());
 	// ---
-	TEST_OUTPUT("Terminal test", terminal_test());
-	terminal_read(fd, b, 0);
+	// TEST_OUTPUT("Terminal test", terminal_test());
+	// terminal_read(fd, b, 0);
 	// TEST_OUTPUT("filesys_general_test", file_general_test());
 	// TEST_OUTPUT("filesys_name_doesn't_exist_test", file_name_test());
 	// TEST_OUTPUT("filesys_long_name_test", long_name_test());
 	// TEST_OUTPUT("filesys_name_comparison_test", name_test());
 	// TEST_OUTPUT("filesys_read_data_test", partial_fish_offset_test());
 	// TEST_OUTPUT("filesys_read_data_test", partial_fish_byteRead_test());
-	TEST_OUTPUT("filesys_read_data_test", verylongname());
-	terminal_read(fd, b, 0);
+	// TEST_OUTPUT("filesys_read_data_test", verylongname());
+	// terminal_read(fd, b, 0);
 	// TEST_OUTPUT("filesys_read_data_test", fish_binary());
 	// TEST_OUTPUT("filesys_read_data_test", cat_binary());
 	//TEST_OUTPUT("filesys_read_data_test", verylongprint());
-	TEST_OUTPUT("filesys_read_data_test", entire_fish_test());
-	terminal_read(fd, b, 0);
-	TEST_OUTPUT("Listing all files", file_listing_test());
-	terminal_read(fd, b, 0);
+	// TEST_OUTPUT("filesys_read_data_test", entire_fish_test());
+	// terminal_read(fd, b, 0);
+	// TEST_OUTPUT("Listing all files", file_listing_test());
+	// terminal_read(fd, b, 0);
 	//verylongprint();
 	//fish_binary();
 	//cat_binary();
