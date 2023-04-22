@@ -181,3 +181,22 @@ Description:
     i.e. nothing in run_queue.
 Solution:
     Check in scheduler if anything already in run_queue.
+
+<--------------------------------------------------------->
+                          BUG 11                          
+<--------------------------------------------------------->
+Time:
+    2023.4.21.
+Creator:
+    Haoze Gao.
+Description:
+    Running pingpong in three terminals would make the output
+    not responsive/laggy. Scheduler changes to another process
+    and it would respond to RTC interrupt, which should be handled
+    by the process providing display output. 
+Solution:
+    Virtualize RTC so that the interrupt handling does not directly
+    affect the variable used to monitor the condition blocking rtc_read.
+    Now different terminal could run process with different frequency 
+    as this frequency is virtualized by monitoring ticks(+1 when RTC interrupt)
+    and threshold(not affected by RTC).
