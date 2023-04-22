@@ -200,3 +200,20 @@ Solution:
     Now different terminal could run process with different frequency 
     as this frequency is virtualized by monitoring ticks(+1 when RTC interrupt)
     and threshold(not affected by RTC).
+
+<--------------------------------------------------------->
+                          BUG 12                          
+<--------------------------------------------------------->
+Time:
+    2023.4.21.
+Creator:
+    Haoze Gao.
+Description:
+    Keyboard input not always show on current terminal. When scheduler
+    change running_term to another process, the keyboard buffer is not
+    chosen correctly. Also, the area of video memory to write to is not
+    correct.
+Solution:
+    Always choose display_term as the index of keyboard buffer to update.
+    Create separate putc, clear, function for keyboard input that requires 
+    writing to display_term related area. 
