@@ -390,11 +390,9 @@ int32_t sys_vidmap(uint8_t** screen_start) {
     if(screen_start == NULL || (uint32_t)screen_start < USER_ADDR_VIRTUAL || (uint32_t)screen_start > (USER_ADDR_VIRTUAL + fourMB - 1)) {
         return SYSCALL_FAIL;; //check if screen is within bounds
     }
-    cli();
-    vmem_remap();
+    // vmem_remap();
     // store virtual video memory address as a pointer in user space
     *screen_start = (uint8_t*)(USER_ADDR_VIRTUAL + fourMB);
-    sti();
     return 0;
 };
 
@@ -483,5 +481,4 @@ void vmem_remap() {
         process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;
     }
     flush_tlb();
-
 }

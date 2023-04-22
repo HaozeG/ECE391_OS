@@ -13,10 +13,10 @@ int8_t schedule_disable = 0;
 */
 void schedule() {
     cli();
-    // if (schedule_disable == 1) {
-    //     sti();
-    //     return;
-    // }
+    if (schedule_disable == 1) {
+        sti();
+        return;
+    }
     // find the next one in the run_queue
     int32_t new_pid = 0;
     pcb_t *next_pcb = 0;
@@ -59,6 +59,7 @@ void schedule() {
     if (running_term == display_term) {
         // restore new video memory
         memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + display_term * fourKB), fourKB);
+        cursor_update(screen_x[display_term], screen_y[display_term]);
     }
     // context switch
     asm volatile ("                     \n\

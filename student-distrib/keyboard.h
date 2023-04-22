@@ -45,7 +45,7 @@
 
 #define MAX_BUF 128
 
-extern int enter_buf;
+extern int enter_buf[NUM_TERM];
 extern int count_char[NUM_TERM];
 extern unsigned char kbd_buffer[NUM_TERM][KBDBUF_SIZE]; // buffer that holds the characters on terminal line(read by terminal buffer)
 extern int caps_buf;

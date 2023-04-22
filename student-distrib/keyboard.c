@@ -18,7 +18,7 @@ int cursor_d_buf = 0;
 // int full = 0; // whether to allow normal char input
 
 int count_char[NUM_TERM] = {0, 0, 0}; // valid byte numbers in kbd buffer
-int enter_buf = 0;
+int enter_buf[NUM_TERM] = {0, 0, 0};
 unsigned char kbd_buffer[NUM_TERM][KBDBUF_SIZE];
 
 // array mapping scan code to ascii characters
@@ -111,13 +111,16 @@ void keyboard_handler()
         {
         // func keys
         case ENTER:
-            enter_buf = 1;
+            schedule_disable = 1;
+            enter_buf[display_term] = 1;
             if (count_char[display_term] < MAX_BUF) {
                 kbd_buffer[display_term][count_char[display_term]] = '\n';
                 count_char[display_term]++;
                 // TODO: may not be the correct solution
-                putc_kbd('\n');
+
+                putc_display('\n');
             }
+            schedule_disable = 0;
             break;
         case CAPS:
             caps_buf = caps_buf ^ 0x01;
@@ -182,10 +185,8 @@ void keyboard_handler()
             if (alt_buf) {
                 if (scan_code >= F1 && scan_code <= F3) {
                     if (display_term != (scan_code - F1)) {
-                        schedule_disable = 1;
                         // switch terminal
                         terminal_switch(scan_code - F1);
-                        schedule_disable = 0;
                     }
                     return;
                 }
@@ -197,7 +198,7 @@ void keyboard_handler()
                 {
                     // TODO: clear displaying one
                     schedule_disable = 1;
-                    clear();
+                    clear_display();
                     schedule_disable = 0;
                     // kbd_buffer[] = {'\0'};
                     count_char[display_term] = 0;
@@ -217,28 +218,34 @@ void keyboard_handler()
             // backspace
             if (scan_code == BACKSPACE)
             {
+                schedule_disable = 1;
                 handle_backspace();
+                schedule_disable = 0;
                 return;
             }
 
-            if (count_char[display_term] >= (MAX_BUF - 1) || enter_buf == 1)
+            if (count_char[display_term] >= (MAX_BUF - 1) || enter_buf[display_term] == 1)
                 return;
 
             // tab
             if (scan_code == TAB)
             {
-                putc_kbd('\t');
+                schedule_disable = 1;
+                putc_display('\t');
                 kbd_buffer[display_term][count_char[display_term]] = '\t';
                 count_char[display_term]++;
+                schedule_disable = 0;
                 return;
             }
 
             if (ascii != 0)
             {
                 // printf("mode = %d, shift = %d, count = %d\n", mode,shift_buf,count_char);
-                putc_kbd(ascii);                    // write char to screen
+                schedule_disable = 1;
+                putc_display(ascii);                    // write char to screen
                 kbd_buffer[display_term][count_char[display_term]] = ascii; // write to kbd buffer
                 count_char[display_term]++;
+                schedule_disable = 0;
             }
             break;
         }
@@ -258,7 +265,7 @@ void handle_backspace()
     {
         return;
     }
-    putc_kbd('\b');
+    putc_display('\b');
     count_char[display_term]--;
     // printf("%d", count_char);
     return;

@@ -34,6 +34,7 @@ void rtc_init(void) {
     for (i = 0; i < NUM_TERM; i++) {
         ticker[i] = 0;
         threshold[i] = 1; // default rate of 1024 
+        flag_wait[i] = 0;
     }
     // set rate
     outb(RTC_REG_A, RTC_PORT);            //set index to reg A
@@ -56,6 +57,7 @@ void rtc_handler(void) {
     //printf("RTC GENERATED");
     int i;
     send_eoi(RTC_VEC - IRQ_BASE_VEC);
+    // schedule_disable = 1;
     for (i = 0; i < NUM_TERM; i++) {
         if (ticker[i] < threshold[i]) {
             ticker[i]++;
@@ -66,6 +68,7 @@ void rtc_handler(void) {
     }
     outb(RTC_REG_C, RTC_PORT);  //selects register C
     inb(RTC_DATA);    //throw away contents
+    // schedule_disable = 1;
 
     // cli();
     // outb(RTC_REG_C, RTC_PORT);  //selects register C
@@ -117,7 +120,10 @@ int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {
     schedule_disable = 1;
     sti();
     flag_wait[running_term] = 0;
-    while(flag_wait[running_term] == 0);     //used to wait until interrupt
+    while(flag_wait[running_term] == 0) {
+        schedule_disable = 1;
+        schedule_disable = 0;
+    };     //used to wait until interrupt
     flag_wait[running_term] = 0;
     schedule_disable = 0;
     return 0;

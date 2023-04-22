@@ -14,7 +14,7 @@ int32_t terminal_open()
 {
     clear();
     // Clears buf
-    count_char[display_term] = 0;
+    count_char[running_term] = 0;
     // int32_t i;
     // for (i = 0; i < MAX_BUF; i++) {
     //     terminal_buf[i] = 0;
@@ -47,12 +47,12 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     {
         return -1;
     }
-    // output existing contents in keyboard buffer to screen
-    kbd_buffer[display_term][count_char[display_term]] = '\0';
-    puts((int8_t *)kbd_buffer[display_term]);
     cli();
+    // output existing contents in keyboard buffer to screen
+    kbd_buffer[running_term][count_char[running_term]] = '\0';
+    puts((int8_t *)kbd_buffer[running_term]);
     // Wait until enter pressed
-    while (!enter_buf)
+    while (!enter_buf[running_term])
     {
         sti();
         // create delay
@@ -64,16 +64,16 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 
     i = 0;
     // MAX_BUF: up to 128 characters
-    while (i < MAX_BUF && i < count_char[display_term] && i < n_bytes)
+    while (i < MAX_BUF && i < count_char[running_term] && i < n_bytes)
     {
-        buf_to[i] = kbd_buffer[display_term][i];
+        buf_to[i] = kbd_buffer[running_term][i];
         i++;
     }
     buf_to[MAX_BUF - 1] = '\n';
 
     // reset enter indicator
-    enter_buf = 0;
-    count_char[display_term] = 0;
+    enter_buf[running_term] = 0;
+    count_char[running_term] = 0;
     sti();
     return i;
 }
@@ -125,6 +125,7 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t n_bytes)
  *   SIDE EFFECTS: Change content on screen
  */
 int32_t terminal_switch(int new_term_index) {
+    schedule_disable = 1;
     if (new_term_index < 0 || new_term_index > 2) {
         return -1;
     }
@@ -147,6 +148,7 @@ int32_t terminal_switch(int new_term_index) {
         memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + display_term * fourKB), fourKB);
         cursor_update(screen_x[display_term], screen_y[display_term]);
         is_base_shell = 1;
+        schedule_disable = 0;
         // create shell process for new terminal
         sys_execute((uint8_t *)"shell \n");
         return 0;
@@ -184,5 +186,6 @@ int32_t terminal_switch(int new_term_index) {
             :  "r"(current_pcb->saved_ebp), "r"(current_pcb->saved_esp)\
             :  "memory", "cc", "eax"
     );
+    schedule_disable = 0;
     return 0;
 }
