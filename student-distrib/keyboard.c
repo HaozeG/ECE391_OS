@@ -2,6 +2,7 @@
 #include "syscall.h"
 #include "lib.h"
 #include "terminal.h"
+#include "scheduler.h"
 
 int caps_buf = 0;
 int ctrl_buf = 0;
@@ -181,8 +182,10 @@ void keyboard_handler()
             if (alt_buf) {
                 if (scan_code >= F1 && scan_code <= F3) {
                     if (display_term != (scan_code - F1)) {
+                        schedule_disable = 1;
                         // switch terminal
                         terminal_switch(scan_code - F1);
+                        schedule_disable = 0;
                     }
                     return;
                 }
@@ -193,7 +196,9 @@ void keyboard_handler()
                 if (ascii == 'l' || ascii == 'L') // CTRL + L: clear the screen
                 {
                     // TODO: clear displaying one
+                    schedule_disable = 1;
                     clear();
+                    schedule_disable = 0;
                     // kbd_buffer[] = {'\0'};
                     count_char[display_term] = 0;
                     return;
@@ -203,6 +208,7 @@ void keyboard_handler()
                     // terminal_switch(display_term);
                     // ctrl_buf = 1;
                     // sys_halt(0);
+                    return;
                 } else {
                     return;
                 }
