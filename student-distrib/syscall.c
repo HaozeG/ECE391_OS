@@ -115,8 +115,10 @@ int32_t sys_execute(const uint8_t* command) {
     int32_t i;
     uint8_t cmd[128],arg[128];
 
+    cli();
     // check for NULL input
     if (!command) {
+        sti();
         return SYSCALL_FAIL;
     }
     // Parse arguments
@@ -142,25 +144,25 @@ int32_t sys_execute(const uint8_t* command) {
     directory_entry_t dentry;
     // search for command in file system
     if (read_dentry_by_name(cmd, &dentry) != 0) {
+        sti();
         return SYSCALL_FAIL;  // not found
     }
     // check file type(2 for regular file)
     if (2 != dentry.file_type) {
+        sti();
         return SYSCALL_FAIL;
     }
     // check 4bytes ELF magic constant at the start of file
     uint8_t elf_buf[4];
     read_data(dentry.inode_num, 0, elf_buf, 4);
     if (0 != strncmp((int8_t *)elf_buf, (int8_t *)magic_numbers, 4)) {
+        sti();
         return SYSCALL_FAIL;
     }
 
     // assign process number based on pid_array
     pid_array[0] = 1;       // "kernel process", never return to pid 0
-    cli();
     if (is_base_shell) {
-        // enable after having the first base shell
-        enable_irq(PIT_VEC - IRQ_BASE_VEC);
         new_pid = running_term + 1;
         is_base_shell = 0;
     } else {
@@ -229,13 +231,12 @@ int32_t sys_execute(const uint8_t* command) {
     run_queue[running_term] = current_pcb;
     vmem_remap();
 
-    sti();
     // context switch
     // push context on stack
     // eip = prog_eip
     // esp = 132MB - 4B = 0x083FFFFC
     // 0x2B: USER_DS
-    // TODO: sti() by changing new EFLAGS
+    // 0x0200: sti() (IF is bit 9 of EFLAGS)
     asm volatile ("                     \n\
             movw $0x2B, %%ax            \n\
             movw %%ax, %%ds             \n\
@@ -246,6 +247,9 @@ int32_t sys_execute(const uint8_t* command) {
             pushl %1                    \n\
             pushl $0x083FFFFC           \n\
             pushfl                      \n\
+            popl %%eax                  \n\
+            andl $0x0200, %%eax         \n\
+            pushl %%eax                 \n\
             pushl %2                    \n\
             pushl %3                    \n\
             iret                        \n\
