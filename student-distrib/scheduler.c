@@ -2,6 +2,8 @@
 #include "terminal.h"
 #include "x86_desc.h"
 
+// TODO: if needed?
+int8_t schedule_disable = 0;
 /*
 * schedule
 *   DESCRIPTION: Implement scheduler driven by PIT in Round-robin way
@@ -11,9 +13,13 @@
 */
 void schedule() {
     cli();
+    // if (schedule_disable == 1) {
+    //     sti();
+    //     return;
+    // }
     // find the next one in the run_queue
-    int32_t new_pid = current_pid;
-    pcb_t *next_pcb = get_pcb_ptr(current_pid);
+    int32_t new_pid = 0;
+    pcb_t *next_pcb = 0;
     int i;
     for (i = 1; i <= NUM_ACTIVE_PROC; i++) {
         if (run_queue[(running_term + i) % NUM_ACTIVE_PROC] != 0) {
@@ -22,9 +28,13 @@ void schedule() {
             break;
         }
     }
+    // if nothing is in run_queue
+    if (new_pid == 0) {
+        sti();
+        return;
+    }
     pcb_t *prev_pcb = get_pcb_ptr(current_pid);
 
-    // TODO: check memcopy(what condition to copy/restore; which one to copy/restore)
     if (running_term == display_term) {
         // store current video memory
         memcpy((void *)(VID_MEM_TERM0 + running_term * fourKB), (void *)VID_MEM_ADDR, fourKB);
@@ -49,7 +59,7 @@ void schedule() {
     if (running_term == display_term) {
         // restore new video memory
         memcpy((void *)VID_MEM_ADDR, (void *)(VID_MEM_TERM0 + display_term * fourKB), fourKB);
-    } 
+    }
     // context switch
     asm volatile ("                     \n\
             movl %0, %%ebp              \n\

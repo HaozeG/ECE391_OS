@@ -6,6 +6,7 @@
 #include "syscall.h"
 
 #define NUM_ACTIVE_PROC NUM_TERM
+extern int8_t schedule_disable;
 
 pcb_t *run_queue[NUM_ACTIVE_PROC];
 
