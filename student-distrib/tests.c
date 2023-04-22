@@ -588,8 +588,8 @@ int file_listing_test() {
 /* Test suite entry point */
 void launch_tests()
 {
-	char b[1];
-	int32_t fd = 0;
+	// char b[1];
+	// int32_t fd = 0;
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("divide zero", divide_zero_test());
 	//TEST_OUTPUT("keyboard test", keyboard_test());
