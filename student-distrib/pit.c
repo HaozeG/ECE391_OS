@@ -49,6 +49,7 @@ void pit_init() {
     // set divider(frequency)
     outb((uint8_t)(PIT_DIVIDER & PIT_DATA_MASK), PIT_DATA_PORT_0);
     outb((uint8_t)(PIT_DIVIDER >> 8) & PIT_DATA_MASK, PIT_DATA_PORT_0);
+    enable_irq(PIT_VEC - IRQ_BASE_VEC);
 }
 
 /*
