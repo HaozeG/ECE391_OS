@@ -60,7 +60,6 @@ void keyboard_handler()
     unsigned char ascii;
 
     scan_code = inb(KEYPORT) & 0xff; // read scan code
-    scan_code = inb(KEYPORT) & 0xff; // read scan code
     send_eoi(KEYBOARD_IRQ);
     if (shift_l_buf == 1 || shift_r_buf == 1)
         shift_buf = 1;
@@ -205,10 +204,15 @@ void keyboard_handler()
                     return;
                 } else if (ascii == 'c' || ascii == 'C') {
                     // TODO: halt the visible one
-                    // May change this implementation to signal
-                    // terminal_switch(display_term);
-                    // ctrl_buf = 1;
+                    // schedule_disable = 1;
+                    // while (running_term != display_term){
+                    //     schedule_disable = 0;
+                    //     schedule_disable = 1;
+                    // }
                     // sys_halt(0);
+                    // // May change this implementation to signal
+                    // // terminal_switch(display_term);
+                    // // sys_halt(0);
                     return;
                 } else {
                     return;
@@ -231,7 +235,12 @@ void keyboard_handler()
             if (scan_code == TAB)
             {
                 schedule_disable = 1;
-                putc_display('\t');
+                // putc_display('\t');
+                int i;
+                for (i = 0; i < 4; i++)
+                {
+                    putc_display(' ');
+                }
                 kbd_buffer[display_term][count_char[display_term]] = '\t';
                 count_char[display_term]++;
                 schedule_disable = 0;
@@ -265,7 +274,7 @@ void handle_backspace()
     {
         return;
     }
-    putc_display('\b');
+    putc_display('\b');    
     count_char[display_term]--;
     // printf("%d", count_char);
     return;

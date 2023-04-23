@@ -132,8 +132,8 @@ int32_t terminal_switch(int new_term_index) {
         return -1;
     }
     // clear func key buffer require holding
-    ctrl_buf = 0;
-    alt_buf = 0;
+    // ctrl_buf = 0;
+    // alt_buf = 0;
     if (running_term == display_term) {
         // store current video memory
         memcpy((void *)(VID_MEM_TERM0 + display_term * fourKB), (void *)VID_MEM_ADDR, fourKB);

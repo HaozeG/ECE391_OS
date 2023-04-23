@@ -365,14 +365,6 @@ void putc(uint8_t c)
         screen_x[running_term] = 0;
         cursor_update(screen_x[running_term], screen_y[running_term]);
     }
-    else if (c == '\t') // handle tab
-    {
-        for (i = 0; i < 4; i++)
-        {
-            sti();
-            putc(' ');
-        }
-    }
     else if (c == '\b') // hanlde backspace
     {
         if (kbd_buffer[running_term][count_char[running_term] - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
@@ -430,14 +422,6 @@ void putc_display(uint8_t c)
         screen_y[display_term] = (screen_y[display_term] + 1) % NUM_ROWS;
         screen_x[display_term] = 0;
         cursor_update(screen_x[display_term], screen_y[display_term]);
-    }
-    else if (c == '\t') // handle tab
-    {
-        for (i = 0; i < 4; i++)
-        {
-            sti();
-            putc_display(' ');
-        }
     }
     else if (c == '\b') // hanlde backspace
     {

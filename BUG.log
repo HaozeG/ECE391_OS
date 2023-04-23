@@ -217,3 +217,18 @@ Solution:
     Always choose display_term as the index of keyboard buffer to update.
     Create separate putc, clear, function for keyboard input that requires 
     writing to display_term related area. 
+
+<--------------------------------------------------------->
+                          BUG 13                          
+<--------------------------------------------------------->
+Time:
+    2023.4.22.
+Creator:
+    Haowen Zheng.
+Description:
+    When doing cat + executable file, the output contains huge space and 
+    the content is not completly matched.
+Solution:
+    Change the putc function, so that it will do nothing when the input is
+    null, and do normal output if the input is '\t'. Then we handle the tab 
+    directly in keyboard handler without putc.
