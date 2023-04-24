@@ -14,6 +14,8 @@
 #define USER_ADDR_VIRTUAL 0x8000000 // start at 128MB
 #define fourKB 0x01000
 #define fourMB 0x400000
+#define VID_MEM_ADDR_MODEX 0xA0000	// 0xA0000 - 0xAFFFF
+#define VID_MEM_SIZE_MODEX 0x20	// (2 * 0x10000 / 0x1000(4KiB)) double_buffer
 #ifndef ASM
 
 typedef union direc_entry {
@@ -79,6 +81,7 @@ process_paging_t process_paging[NUM_PROCESS_MAX] __attribute__((aligned(ALIGNMEN
 extern void page_init(uint32_t pid);
 extern void loadPageDirectory(pde_t*);
 extern void enablePaging();
+extern void paging_init_mode_X();
 
 #endif /* ASM */
 
