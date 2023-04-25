@@ -607,6 +607,28 @@ int write_file_test() // 36164 bytes
 	return PASS;
 }
 
+int write_to_direc() {
+	clear();
+	char buf[] = "txt";
+	uint8_t fname[] = "txt";
+	write_directory(3, buf, 1);
+	directory_entry_t dentry;
+	// if (read_dentry_by_name(fname, &dentry) == 0) {
+	// 	return PASS;
+	// }
+	// return FAIL;
+
+	printf("IS 1 or 0???? %d", read_dentry_by_name(fname, &dentry));
+	return FAIL;
+}
+
+// int new_file_and_write() {
+// 	clear();
+// 	char buf[] = "testingifexist.txt";
+// 	uint8_t fname[] = "testingifexist.txt";
+// 	write_directory(3, buf, 1);
+// 	directory_entry_t dentry;
+// }
 /* Test suite entry point */
 void launch_tests()
 {
@@ -645,5 +667,6 @@ void launch_tests()
     // TEST_OUTPUT("int_test", int_test());
     // TEST_OUTPUT("divide zero", divide_zero_test());
     // TEST_OUTPUT("keyboard test", keyboard_test());
-	TEST_OUTPUT("write_file_test", write_file_test());
+	//TEST_OUTPUT("write_file_test", write_file_test());
+	TEST_OUTPUT("write to directory", write_to_direc());
 }
