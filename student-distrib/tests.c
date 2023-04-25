@@ -583,7 +583,29 @@ int file_listing_test() {
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
-
+int write_file_test() // 36164 bytes
+{
+	clear();
+	//TEST_HEADER;
+	int i;
+	int res;
+	int bytes_written; 
+	int8_t buf[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+	uint8_t read[200];
+	uint8_t fname[] = "frame0.txt";
+	directory_entry_t dentry;
+	read_dentry_by_name(fname, &dentry);
+	bytes_written = write_data(dentry.inode_num, (uint8_t*)buf, (uint32_t)strlen(buf));
+	res = read_data(dentry.inode_num, 0, read, 300);
+	printf("bytes written: %d \n", bytes_written);
+	printf("bytes read: %d \n", res);
+	printf("inode num: %d", dentry.inode_num);
+	printf("\n");
+	for(i = 0; i < res; i++) {
+		printf("%c", read[i]);
+	}
+	return PASS;
+}
 
 /* Test suite entry point */
 void launch_tests()
@@ -619,8 +641,9 @@ void launch_tests()
 	//cat_binary();
     // TEST_OUTPUT("idt_test", idt_test());
     // TEST_OUTPUT("dereference test", dereference_test());
-	TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
+	//TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
     // TEST_OUTPUT("int_test", int_test());
     // TEST_OUTPUT("divide zero", divide_zero_test());
     // TEST_OUTPUT("keyboard test", keyboard_test());
+	TEST_OUTPUT("write_file_test", write_file_test());
 }
