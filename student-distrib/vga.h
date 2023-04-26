@@ -3,6 +3,15 @@
 
 #include "lib.h"
 
+typedef struct img_t
+{
+    int32_t x;
+    int32_t y;
+    int32_t dim_x;
+    int32_t dim_y;
+    int8_t *ptr;
+} img_t;
+
 /* 
  * IMAGE  is the whole screen in mode X: 320x200 pixels in our flavor.
  * SCROLL is the scrolling region of the screen.
@@ -18,7 +27,7 @@
 #define IMAGE_Y_DIM     200   /* pixels                                     */
 #define IMAGE_X_WIDTH   (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
 #define SCROLL_X_DIM    IMAGE_X_DIM                /* upper screen size     */
-#define SCROLL_Y_DIM    IMAGE_Y_DIM - (STATUS_BAR_HEIGHT)/* upper screen size*/
+#define SCROLL_Y_DIM    IMAGE_Y_DIM                 /* upper screen size*/
 #define SCROLL_X_WIDTH  (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
 
 #define STATUS_BAR_HEIGHT       (FONT_HEIGHT + 2)
@@ -29,6 +38,9 @@
 #define SCREEN_SIZE             (SCROLL_SIZE * 4 + 1)
 #define BUILD_BUF_SIZE          (SCREEN_SIZE + 20000)
 #define BUILD_BASE_INIT         ((BUILD_BUF_SIZE - SCREEN_SIZE) / 2)
+
+extern int draw_x, draw_y;
+extern int is_mode_X;
 
 /* configure VGA for mode X; initializes logical view to (0,0) */
 extern int set_mode_X();
@@ -62,14 +74,14 @@ extern int draw_vert_line(int x);
 extern void set_status_bar();
 
 /* update the content in status bar based on input info */
-extern void update_status_bar(int level, int num_fruit, int sec_elapsed);
+// extern void update_status_bar(int level, int num_fruit, int sec_elapsed);
 
-extern void draw_player_masked(int player_x, int player_y, unsigned char *player_mask, unsigned char *player_block);
-extern void undraw_player_masked(int player_x, int player_y, unsigned char *player_mask, unsigned char *player_block);
+// extern void draw_player_masked(int player_x, int player_y, unsigned char *player_mask, unsigned char *player_block);
+// extern void undraw_player_masked(int player_x, int player_y, unsigned char *player_mask, unsigned char *player_block);
 
 // set the original and semi-transparent palette color
-extern void set_color_wall(int level);
-extern void set_color_player(int ticks);
+// extern void set_color_wall(int level);
+// extern void set_color_player(int ticks);
 
 // draw a block of semi-transparent text
 extern void draw_floating_text(int pos_x, int pos_y, int type);
@@ -79,6 +91,6 @@ extern void undraw_floating_text(int pos_x, int pos_y);
 extern int32_t vga_open();
 extern int32_t vga_close(int32_t fd);
 extern int32_t vga_read(int32_t fd, void *buf, int32_t n);
-extern int32_t vga_write(int32_t fd, void *buf, int32_t n);
+extern int32_t vga_write(int32_t fd, void *buf);
 
 #endif

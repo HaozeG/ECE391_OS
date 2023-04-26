@@ -81,7 +81,7 @@ process_paging_t process_paging[NUM_PROCESS_MAX] __attribute__((aligned(ALIGNMEN
 extern void page_init(uint32_t pid);
 extern void loadPageDirectory(pde_t*);
 extern void enablePaging();
-extern void paging_init_mode_X();
+extern void paging_init_mode_X(uint32_t pid);
 
 #endif /* ASM */
 

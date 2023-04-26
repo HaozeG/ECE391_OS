@@ -8,6 +8,7 @@
 #include "terminal.h"
 #include "rtc.h"
 #include "idt.h"
+#include "vga.h"
 
 // variable to know which is current process
 uint32_t current_pid = 1;
@@ -27,6 +28,7 @@ static uint32_t *stdout_table[] = {(uint32_t *)terminal_open, (uint32_t *)termin
 static uint32_t *file_table[] = {(uint32_t *)open_file, (uint32_t *)close_file, (uint32_t *)read_file, (uint32_t *)write_file};
 static uint32_t *dir_table[] = {(uint32_t *)open_directory, (uint32_t *)close_directory, (uint32_t *)read_directory, (uint32_t *)write_directory};
 static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (uint32_t *)rtc_read, (uint32_t *)rtc_write};
+static uint32_t *vga_table[] = {(uint32_t *)vga_open, (uint32_t *)vga_close, (uint32_t *)vga_read, (uint32_t *)vga_write};
 
 /*
 * sys_halt
@@ -319,13 +321,18 @@ int32_t sys_open(const uint8_t* filename) {
             pcb_ptr->fd[i].inode = dentry.inode_num;
             pcb_ptr->fd[i].file_position = 0;
 
-            if(dentry.file_type == 0) { // rtc
-                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(rtc_table);
-            } else if (dentry.file_type == 1) { // directory
-                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(dir_table);
-            } else if (dentry.file_type == 2) { // regular file
-                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(file_table);
+            if (strncmp((int8_t *)dentry.file_name, "vga", strlen("vga")) == 0) {
+                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(vga_table);
+            } else {
+                if(dentry.file_type == 0) { // rtc
+                    pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(rtc_table);
+                } else if (dentry.file_type == 1) { // directory
+                    pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(dir_table);
+                } else if (dentry.file_type == 2) { // regular file
+                    pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(file_table);
+                }
             }
+
             // call actual open function of the device
             pcb_ptr->fd[i].file_operations_table_pointer->open(filename);
             return i; // return the file descriptor upon successful initialization
@@ -390,7 +397,7 @@ int32_t sys_vidmap(uint8_t** screen_start) {
     if(screen_start == NULL || (uint32_t)screen_start < USER_ADDR_VIRTUAL || (uint32_t)screen_start > (USER_ADDR_VIRTUAL + fourMB - 1)) {
         return SYSCALL_FAIL;; //check if screen is within bounds
     }
-    // vmem_remap();
+    vmem_remap();
     // store virtual video memory address as a pointer in user space
     *screen_start = (uint8_t*)(USER_ADDR_VIRTUAL + fourMB);
     return 0;
@@ -462,23 +469,34 @@ void flush_tlb() {
 *   DESCRIPTION: Remap virtual memory relating to video memory
 *   INPUTS: none
 *   RETURN VALUE: none
-*   SIDE EFFECTS: Change virtual video memory based on current_pid
+*   SIDE EFFECTS: Change virtual video memory based on current_pid; different mapping based on display mode
 */
 void vmem_remap() {
-    // set up page directory entry to 4KiB page
-    process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
-    if (running_term == display_term) {
-        // map to displaying vmem
-        // for user
-        process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
-        // for kernel
-        process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
+    if (is_mode_X) {
+        // set up page directory entry to 4KiB page
+        process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
+        int i;
+        for (i = 0; i < VID_MEM_SIZE_MODEX; i++) {
+            process_paging[current_pid].pte_vidmap[i].page_base_addr = (VID_MEM_ADDR_MODEX >> 12) + i * fourKB;   //video memory address
+            process_paging[current_pid].pte_vidmap[i].present = 1;
+            process_paging[current_pid].pte_vidmap[i].user_supervisor = 1;
+        }
     } else {
-        // map to non-displaying vmem
-        // for user
-        process_paging[current_pid].pte_vidmap[0].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;   //video memory address
-        // for kernel
-        process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;
+        // set up page directory entry to 4KiB page
+        process_paging[current_pid].page_directory[(USER_ADDR_VIRTUAL + fourMB) >> 22].pde_page_table.present = 1;
+        if (running_term == display_term) {
+            // map to displaying vmem
+            // for user
+            process_paging[current_pid].pte_vidmap[0].page_base_addr = VID_MEM_ADDR >> 12;   //video memory address
+            // for kernel
+            process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = VID_MEM_ADDR >> 12;
+        } else {
+            // map to non-displaying vmem
+            // for user
+            process_paging[current_pid].pte_vidmap[0].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;   //video memory address
+            // for kernel
+            process_paging[current_pid].page_table[VID_MEM_ADDR >> 12].page_base_addr = (VID_MEM_TERM0 + running_term * fourKB) >> 12;
+        }
     }
     flush_tlb();
 }

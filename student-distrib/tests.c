@@ -6,6 +6,8 @@
 #include "rtc.h"
 #include "filesys.h"
 #include "terminal.h"
+#include "text.h"
+#include "vga.h"
 
 #define PASS 1
 #define FAIL 0
@@ -585,12 +587,28 @@ int file_listing_test() {
 /* Checkpoint 5 tests */
 
 
+
+void test_VGA() {
+    clear();
+	// paging_init_mode_X(0);
+    set_mode_X();
+    clear_screens();
+
+    clear_mode_X();
+    page_init(0);
+    printf("hello\n");
+    // draw_floating_text(5, 20, 3);
+    // show_screen();
+	// memset((char *)0xA0000, 1, (320*200));
+	while(1){};
+}
+
 /* Test suite entry point */
 void launch_tests()
 {
 	// char b[1];
 	// int32_t fd = 0;
-	//TEST_OUTPUT("idt_test", idt_test());
+	// TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("divide zero", divide_zero_test());
 	//TEST_OUTPUT("keyboard test", keyboard_test());
 	// TEST_OUTPUT("paging_general_test", keyboard_test());
@@ -619,8 +637,9 @@ void launch_tests()
 	//cat_binary();
     // TEST_OUTPUT("idt_test", idt_test());
     // TEST_OUTPUT("dereference test", dereference_test());
-	TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
+	// TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
     // TEST_OUTPUT("int_test", int_test());
     // TEST_OUTPUT("divide zero", divide_zero_test());
     // TEST_OUTPUT("keyboard test", keyboard_test());
+	test_VGA();
 }

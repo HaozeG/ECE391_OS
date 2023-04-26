@@ -110,13 +110,14 @@ void page_init(uint32_t pid) {
 *   RETURN VALUE: none  
 *   SIDE EFFECTS: Change video memory mapping from 0xB8000-0xB8FFF to 0xA0000-0xBFFFF
 */
-void paging_init_mode_X() {
+void paging_init_mode_X(uint32_t pid) {
 	int i;
 	for (i = 0; i < VID_MEM_SIZE_MODEX; i++) {
-		process_paging[0].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].present = 1;
-		process_paging[0].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].read_write = 1;
-		process_paging[0].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].page_base_addr = (VID_MEM_ADDR_MODEX >> 12) + i * fourKB;
+		process_paging[pid].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].present = 1;
+		process_paging[pid].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].read_write = 1;
+        // 4KB offset also need to >> 12
+		process_paging[pid].page_table[(VID_MEM_ADDR_MODEX >> 12) + i].page_base_addr = ((VID_MEM_ADDR_MODEX + i * fourKB) >> 12);
 
 	}
-	loadPageDirectory(process_paging[0].page_directory);
+	loadPageDirectory(process_paging[pid].page_directory);
 }
