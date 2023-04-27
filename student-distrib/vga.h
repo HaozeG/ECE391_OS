@@ -9,6 +9,7 @@ typedef struct img_t
     int32_t y;
     int32_t dim_x;
     int32_t dim_y;
+    int8_t preserve_mask;
     int8_t *ptr;
 } img_t;
 
@@ -38,6 +39,8 @@ typedef struct img_t
 #define SCREEN_SIZE             (SCROLL_SIZE * 4 + 1)
 #define BUILD_BUF_SIZE          (SCREEN_SIZE + 20000)
 #define BUILD_BASE_INIT         ((BUILD_BUF_SIZE - SCREEN_SIZE) / 2)
+
+#define COLOR_TRANSPARENT 0xFF
 
 extern int draw_x, draw_y;
 extern int is_mode_X;

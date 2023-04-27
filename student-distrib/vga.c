@@ -912,77 +912,39 @@ static void set_graphics_registers(unsigned short table[NUM_GRAPHICS_REGS]) {
     REP_OUTSW(0x03CE, table, NUM_GRAPHICS_REGS);
 }
 
-/*
-    Formula used to convert 6bit RGB to 24bit RGB
-    red = red_2bit * 85
-    green = green_2bit * 85
-    blue = blue_2bit * 85
-*/
 static unsigned char palette_RGB[64][3] = {
-    {0x00, 0x00, 0x00},
-    {0x00, 0x00, 0x55},
-    {0x00, 0x00, 0xAA},
-    {0x00, 0x00, 0xFF},
-    {0x00, 0x55, 0x00},
-    {0x00, 0x55, 0x55},
-    {0x00, 0x55, 0xAA},
-    {0x00, 0x55, 0xFF},
-    {0x00, 0xAA, 0x00},
-    {0x00, 0xAA, 0x55},
-    {0x00, 0xAA, 0xAA},
-    {0x00, 0xAA, 0xFF},
-    {0x00, 0xFF, 0x00},
-    {0x00, 0xFF, 0x55},
-    {0x00, 0xFF, 0xAA},
-    {0x00, 0xFF, 0xFF},
-    {0x55, 0x00, 0x00},
-    {0x55, 0x00, 0x55},
-    {0x55, 0x00, 0xAA},
-    {0x55, 0x00, 0xFF},
-    {0x55, 0x55, 0x00},
-    {0x55, 0x55, 0x55},
-    {0x55, 0x55, 0xAA},
-    {0x55, 0x55, 0xFF},
-    {0x55, 0xAA, 0x00},
-    {0x55, 0xAA, 0x55},
-    {0x55, 0xAA, 0xAA},
-    {0x55, 0xAA, 0xFF},
-    {0x55, 0xFF, 0x00},
-    {0x55, 0xFF, 0x55},
-    {0x55, 0xFF, 0xAA},
-    {0x55, 0xFF, 0xFF},
-    {0xAA, 0x00, 0x00},
-    {0xAA, 0x00, 0x55},
-    {0xAA, 0x00, 0xAA},
-    {0xAA, 0x00, 0xFF},
-    {0xAA, 0x55, 0x00},
-    {0xAA, 0x55, 0x55},
-    {0xAA, 0x55, 0xAA},
-    {0xAA, 0x55, 0xFF},
-    {0xAA, 0xAA, 0x00},
-    {0xAA, 0xAA, 0x55},
-    {0xAA, 0xAA, 0xAA},
-    {0xAA, 0xAA, 0xFF},
-    {0xAA, 0xFF, 0x00},
-    {0xAA, 0xFF, 0x55},
-    {0xAA, 0xFF, 0xAA},
-    {0xAA, 0xFF, 0xFF},
-    {0xFF, 0x00, 0x00},
-    {0xFF, 0x00, 0x55},
-    {0xFF, 0x00, 0xAA},
-    {0xFF, 0x00, 0xFF},
-    {0xFF, 0x55, 0x00},
-    {0xFF, 0x55, 0x55},
-    {0xFF, 0x55, 0xAA},
-    {0xFF, 0x55, 0xFF},
-    {0xFF, 0xAA, 0x00},
-    {0xFF, 0xAA, 0x55},
-    {0xFF, 0xAA, 0xAA},
-    {0xFF, 0xAA, 0xFF},
-    {0xFF, 0xFF, 0x00},
-    {0xFF, 0xFF, 0x55},
-    {0xFF, 0xFF, 0xAA},
-    {0xFF, 0xFF, 0xFF}
+    {0x00, 0x00, 0x00}, {0x00, 0x00, 0x15},
+	{0x00, 0x00, 0x2A}, {0x00, 0x00, 0x3F},
+	{0x00, 0x15, 0x00}, {0x00, 0x15, 0x15},
+	{0x00, 0x15, 0x2A}, {0x00, 0x15, 0x3F},
+	{0x00, 0x2A, 0x00}, {0x00, 0x2A, 0x15},
+	{0x00, 0x2A, 0x2A}, {0x00, 0x2A, 0x3F},
+	{0x00, 0x3F, 0x00}, {0x00, 0x3F, 0x15},
+	{0x00, 0x3F, 0x2A}, {0x00, 0x3F, 0x3F},
+	{0x15, 0x00, 0x00}, {0x15, 0x00, 0x15},
+	{0x15, 0x00, 0x2A}, {0x15, 0x00, 0x3F},
+	{0x15, 0x15, 0x00}, {0x15, 0x15, 0x15},
+	{0x15, 0x15, 0x2A}, {0x15, 0x15, 0x3F},
+	{0x15, 0x2A, 0x00}, {0x15, 0x2A, 0x15},
+	{0x15, 0x2A, 0x2A}, {0x15, 0x2A, 0x3F},
+	{0x15, 0x3F, 0x00}, {0x15, 0x3F, 0x15},
+	{0x15, 0x3F, 0x2A}, {0x15, 0x3F, 0x3F},
+	{0x2A, 0x00, 0x00}, {0x2A, 0x00, 0x15},
+	{0x2A, 0x00, 0x2A}, {0x2A, 0x00, 0x3F},
+	{0x2A, 0x15, 0x00}, {0x2A, 0x15, 0x15},
+	{0x2A, 0x15, 0x2A}, {0x2A, 0x15, 0x3F},
+	{0x2A, 0x2A, 0x00}, {0x2A, 0x2A, 0x15},
+	{0x2A, 0x2A, 0x2A}, {0x2A, 0x2A, 0x3F},
+	{0x2A, 0x3F, 0x00}, {0x2A, 0x3F, 0x15},
+	{0x2A, 0x3F, 0x2A}, {0x2A, 0x3F, 0x3F},
+	{0x3F, 0x00, 0x00}, {0x3F, 0x00, 0x15},
+	{0x3F, 0x00, 0x2A}, {0x3F, 0x00, 0x3F},
+	{0x3F, 0x15, 0x00}, {0x3F, 0x15, 0x15},
+	{0x3F, 0x15, 0x2A}, {0x3F, 0x15, 0x3F},
+	{0x3F, 0x2A, 0x00}, {0x3F, 0x2A, 0x15},
+	{0x3F, 0x2A, 0x2A}, {0x3F, 0x2A, 0x3F},
+	{0x3F, 0x3F, 0x00}, {0x3F, 0x3F, 0x15},
+	{0x3F, 0x3F, 0x2A}, {0x3F, 0x3F, 0x3F}
 };
 
 /*
@@ -999,7 +961,7 @@ static void fill_palette() {
     OUTB(0x03C8, 0x00);
 
     /* Write all 256 colors from array. */
-    REP_OUTSB(0x03C9, palette_RGB, 64);
+    REP_OUTSB(0x03C9, palette_RGB, 64 * 3);
 }
 
 static unsigned char text_mode_RGB[32][3] = {
@@ -1136,35 +1098,6 @@ static void copy_image(unsigned char* img, unsigned short scr_addr) {
 }
 
 /*
- * copy_status_bar
- *   DESCRIPTION: Copy the whole status bar from its buffer to the
- *                video memory.
- *   INPUTS: img -- a pointer to head of the status bar buffer
- *           scr_addr -- the destination offset in video memory
- *   OUTPUTS: none
- *   RETURN VALUE: none
- *   SIDE EFFECTS: copies the whole status bar from its buffer to the
- *                video memory.
- */
-static void copy_status_bar(unsigned char* status_bar, unsigned short scr_addr) {
-    /*
-     * memcpy is actually probably good enough here, and is usually
-     * implemented using ISA-specific features like those below,
-     * but the code here provides an example of x86 string moves
-     */
-     /* bytes to move: STATUS_BAR_HEIGHT * SCROLL_X_DIM / 4 */
-    asm volatile ("                                             \n\
-        cld                                                     \n\
-        movl $1440,%%ecx                                       \n\
-        rep movsb    /* copy ECX bytes from M[ESI] to M[EDI] */ \n\
-        "
-        : /* no outputs */
-        : "S"(status_bar), "D"(mem_image + scr_addr)
-        : "eax", "ecx", "memory"
-    );
-}
-
-/*
 * set_status_bar
 *   DESCRIPTION: Split screen at row y_split to enable status bar display
 *   INPUTS: none
@@ -1237,6 +1170,7 @@ int set_mode_X() {
     fill_palette();                             /* palette colors        */
     clear_screens();                            /* zero video memory     */
     VGA_blank(0);                               /* unblank the screen    */
+    // OUTW(0x3C0, 0xA110);
 
     // set_status_bar();       /* set up status bar */
 
@@ -1289,23 +1223,13 @@ int32_t vga_close(int32_t fd) {
 *   SIDE EFFECTS: 
 */
 int32_t vga_read(int32_t fd, void *buf, int32_t n) {
-
-    return 0;
-}
-
-/*
-* vga_write
-*   DESCRIPTION: 
-*   INPUTS: fd
-*           buf - pointer to struct containing output parameters
-*   RETURN VALUE: 0 on success, -1 on failure
-*   SIDE EFFECTS: 
-*/
-int32_t vga_write(int32_t fd, void *buf) {
     if (!buf || fd < 0 || fd > 7) {
         return -1;
     }
     img_t *img = (img_t *)buf;
+    if (img->dim_x == 0 || img->dim_y == 0|| img->ptr == NULL) {
+        return 0;
+    }
     // uint32_t num_pixels = ece391_strlen((uint8_t *)img->ptr);
     int pos_x = img->x;
     int pos_y = img->y;
@@ -1359,8 +1283,104 @@ int32_t vga_write(int32_t fd, void *buf) {
     /* Draw the clipped image. */
     for (dy = 0; dy < y_bottom; dy++, pos_y++) {
         for (dx = 0; dx < x_right; dx++, pos_x++, blk++)
-            *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
-            (3 - (pos_x & 3)) * SCROLL_SIZE) = *blk;
+            // Check for transparent
+            if (*blk == (int8_t)COLOR_TRANSPARENT) {
+                continue;
+            } else {
+                *blk = *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
+                (3 - (pos_x & 3)) * SCROLL_SIZE);
+            }
+        pos_x -= x_right;
+        blk += x_left;
+    }
+    return 0;
+}
+
+/*
+* vga_write
+*   DESCRIPTION: 
+*   INPUTS: fd
+*           buf - pointer to struct containing output parameters
+*   RETURN VALUE: 0 on success, -1 on failure
+*   SIDE EFFECTS: On return, buf will store masked pixel values
+*/
+int32_t vga_write(int32_t fd, void *buf) {
+    if (!buf || fd < 0 || fd > 7) {
+        return -1;
+    }
+    img_t *img = (img_t *)buf;
+    if (img->dim_x == 0 || img->dim_y == 0 || img->ptr == NULL) {
+        return 0;
+    }
+    // uint32_t num_pixels = ece391_strlen((uint8_t *)img->ptr);
+    int pos_x = img->x;
+    int pos_y = img->y;
+    int8_t *blk = img->ptr;
+    
+    int dx, dy;          /* loop indices for x and y traversal of block */
+    int x_left, x_right; /* clipping limits in horizontal dimension     */
+    int y_top, y_bottom; /* clipping limits in vertical dimension       */
+
+    int32_t BLOCK_X_DIM = img->dim_x;
+    int32_t BLOCK_Y_DIM = img->dim_y;
+    /* If block is completely off-screen, we do nothing. */
+    if (pos_x + BLOCK_X_DIM <= show_x || pos_x >= show_x + SCROLL_X_DIM ||
+        pos_y + BLOCK_Y_DIM <= show_y || pos_y >= show_y + SCROLL_Y_DIM)
+        return 0;
+
+    /* Clip any pixels falling off the left side of screen. */
+    if ((x_left = show_x - pos_x) < 0)
+        x_left = 0;
+    /* Clip any pixels falling off the right side of screen. */
+    if ((x_right = show_x + SCROLL_X_DIM - pos_x) > BLOCK_X_DIM)
+        x_right = BLOCK_X_DIM;
+    /* Skip the first x_left pixels in both screen position and block data. */
+    pos_x += x_left;
+    blk += x_left;
+
+    /*
+     * Adjust x_right to hold the number of pixels to be drawn, and x_left
+     * to hold the amount to skip between rows in the block, which is the
+     * sum of the original left clip and (BLOCK_X_DIM - the original right
+     * clip).
+     */
+    x_right -= x_left;
+    x_left = BLOCK_X_DIM - x_right;
+
+    /* Clip any pixels falling off the top of the screen. */
+    if ((y_top = show_y - pos_y) < 0)
+        y_top = 0;
+    /* Clip any pixels falling off the bottom of the screen. */
+    if ((y_bottom = show_y + SCROLL_Y_DIM - pos_y) > BLOCK_Y_DIM)
+        y_bottom = BLOCK_Y_DIM;
+    /*
+     * Skip the first y_left pixel in screen position and the first
+     * y_left rows of pixels in the block data.
+     */
+    pos_y += y_top;
+    blk += y_top * BLOCK_X_DIM;
+    /* Adjust y_bottom to hold the number of pixel rows to be drawn. */
+    y_bottom -= y_top;
+
+    int8_t temp;
+    /* Draw the clipped image. */
+    for (dy = 0; dy < y_bottom; dy++, pos_y++) {
+        for (dx = 0; dx < x_right; dx++, pos_x++, blk++)
+            // Check for transparent
+            if (*blk == (int8_t)COLOR_TRANSPARENT) {
+                continue;
+            } else {
+                if (img->preserve_mask) {
+                    temp = *blk;
+                    *blk = *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
+                    (3 - (pos_x & 3)) * SCROLL_SIZE);
+                    *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
+                    (3 - (pos_x & 3)) * SCROLL_SIZE) = temp;
+                } else {
+                    *(img3 + (pos_x >> 2) + pos_y * SCROLL_X_WIDTH +
+                    (3 - (pos_x & 3)) * SCROLL_SIZE) = *blk;
+                }
+            }
         pos_x -= x_right;
         blk += x_left;
     }
