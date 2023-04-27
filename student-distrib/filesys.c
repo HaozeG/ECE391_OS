@@ -11,13 +11,14 @@
 *   SIDE EFFECTS: our file system is mapped to the img.
 */
 data_block_map_t dblock_map; 
+int inode_map[64] = {0};
 void filesys_init(uint32_t filesys_addr) {
     int i, j, tmp; 
     boot_block_ptr = (boot_block_t*)filesys_addr; // initialize all the global pointers
     inode_start_ptr = (inode_t*)(boot_block_ptr+1);
     data_start_ptr = (data_block_t*)(inode_start_ptr+boot_block_ptr->num_inodes);
     direc_entry_start_ptr = boot_block_ptr->dir_entries;
-    for (i = 0; i < 1024; i++) {
+    for (i = 0; i < 256; i++) {
         dblock_map.in_use[i] = 0;
     }
     dblock_map.num_datablocks_active = 0;
@@ -27,6 +28,9 @@ void filesys_init(uint32_t filesys_addr) {
             dblock_map.in_use[(inode_start_ptr+i)->data_blocks[j]] = 1; // fill in which data blocks are already being used by the file system.
         }
         dblock_map.num_datablocks_active += tmp; 
+    }
+    for (i = 0; i < boot_block_ptr->num_dir_entries; i++) {
+        inode_map[(direc_entry_start_ptr+i)->inode_num] = 1;
     }
 }
 
@@ -151,7 +155,7 @@ int32_t write_data(uint32_t inode, uint8_t* buf, uint32_t length) {
     int start_index = len % 4096;
     int buf_idx = 0;
     if (start_index == 0) {
-        for (i = 0; i < 1024; i++) {
+        for (i = 0; i < 256; i++) {
             if (dblock_map.in_use[i] == 0) {
                 inode_b->data_blocks[data_block_index] = i;
             }
@@ -239,20 +243,28 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
     if (fd < 2 || fd > 7) {
         return -1; 
     }
-    int i; 
-    int8_t* name = (int8_t*) buf; 
-    if (name == NULL || strlen(name) > 32) { // check if name is valid, i.e. not null and not more than 32 characters.
+    int i, j;
+    int avail_inode = -1;
+    uint8_t* name = (uint8_t*) buf; 
+    if (name == NULL || strlen((int8_t*)(buf)) > 32) { // check if name is valid, i.e. not null and not more than 32 characters.
         return -1; 
     }
-    if (boot_block_ptr->num_inodes > 63) { // no more space `
+    for (j = 0; j < 64; j++) {
+        if (inode_map[j] == 0) {
+            avail_inode = j;
+        }
+    } 
+    if (avail_inode == -1) {
         return -1; 
     }
-    for (i = 1; i < 63; i++) {
+    for (i = 0; i < 64; i++) {
         if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
-            strncpy((int8_t*)(direc_entry_start_ptr+i)->file_name, name, 32);
+            strncpy((direc_entry_start_ptr+i)->file_name, name, 32);
             (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 
-            (direc_entry_start_ptr+i)->inode_num = boot_block_ptr->num_inodes; // allocate the next inode since we have no holes in our inodes.
-            boot_block_ptr->num_inodes++; 
+            (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
+            inode_map[avail_inode] = 1;
+            (inode_start_ptr+avail_inode)->length = 0;
+            boot_block_ptr->num_dir_entries++;
             return 0;
         }
     }
@@ -307,9 +319,15 @@ int32_t open_file(const uint8_t* filename) {
 /*
 * write_file
 *   USELESS WE ARE A READ ONLY FILE SYSTEM.
+*   NOW WE HAVE IMPLEMENTED THIS. 
 */
 int32_t write_file(int32_t fd, const void* buf, int32_t nbytes) {
-    return -1;
+    if (buf == 0) {
+        return -1;
+    }
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    int32_t bWritten = write_data(pcb_ptr->fd[fd].inode, buf, nbytes);
+    return bWritten;
 }
 
 /*

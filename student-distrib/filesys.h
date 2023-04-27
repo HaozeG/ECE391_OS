@@ -31,7 +31,7 @@ typedef struct index_node { // 4 KiB
 
 typedef struct {
     uint32_t num_datablocks_active;
-    uint8_t in_use[128];
+    uint8_t in_use[256];
 } data_block_map_t; 
 
 boot_block_t* boot_block_ptr; // global pointers to important locations
