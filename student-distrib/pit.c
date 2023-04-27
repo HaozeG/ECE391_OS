@@ -3,6 +3,7 @@
 #include "i8259.h"
 #include "idt.h"
 #include "scheduler.h"
+#include "vga.h"
 
 #define PIT_DIVIDER 11931   // set T=30ms, floor(1193182Hz*10ms)
 // #define PIT_DIVIDER 35793   // set T=30ms, floor(1193182Hz*30ms)
@@ -64,11 +65,16 @@ void pit_handler() {
     // cli();
     send_eoi(PIT_VEC - IRQ_BASE_VEC);
     if (!--cnt) {
-        cnt = 1000;  // 0.1Hz signal
+        cnt = 100;  // 1Hz signal
+        // if (is_mode_X) {
+        //     show_screen();
+        // }
         // putc('t');
         // schedule();
     }
     // sti();
     // trigger scheduler
-    schedule();
+    if (!is_mode_X){
+        schedule();
+    }
 }

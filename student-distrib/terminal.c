@@ -5,6 +5,7 @@
 #include "syscall.h"
 #include "x86_desc.h"
 #include "scheduler.h"
+#include "vga.h"
 
 int running_term = 0;    // changed by scheduler        [0, NUM_TERM - 1]
 int display_term = 0;    // changed by terminal_switch  [0, NUM_TERM - 1]
@@ -47,34 +48,53 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     {
         return -1;
     }
-    cli();
-    // output existing contents in keyboard buffer to screen
-    kbd_buffer[running_term][count_char[running_term]] = '\0';
-    puts((int8_t *)kbd_buffer[running_term]);
-    // Wait until enter pressed
-    while (!enter_buf[running_term])
-    {
-        sti();
-        // create delay
-        for (i = 0; i < 200; i++)
-        {
-        }
+    if (is_mode_X) {
+        // clear current kbd buffer
+        count_char[running_term] = 0;
+        // return immediately if any key pressed
         cli();
-    };
+        while(count_char[running_term] == 0) {
+            sti();
+            // create delay
+            for (i = 0; i < 200; i++)
+            {
+            }
+            cli();
+        };
+        sti();
+        buf_to[0] = kbd_buffer[running_term][0];
+        buf_to[1] = 0;
+        return 1;
+    } else {
+        cli();
+        // output existing contents in keyboard buffer to screen
+        kbd_buffer[running_term][count_char[running_term]] = '\0';
+        puts((int8_t *)kbd_buffer[running_term]);
+        // Wait until enter pressed
+        while (!enter_buf[running_term])
+        {
+            sti();
+            // create delay
+            for (i = 0; i < 200; i++)
+            {
+            }
+            cli();
+        };
 
-    i = 0;
-    // MAX_BUF: up to 128 characters
-    while (i < MAX_BUF && i < count_char[running_term] && i < n_bytes)
-    {
-        buf_to[i] = kbd_buffer[running_term][i];
-        i++;
+        i = 0;
+        // MAX_BUF: up to 128 characters
+        while (i < MAX_BUF && i < count_char[running_term] && i < n_bytes)
+        {
+            buf_to[i] = kbd_buffer[running_term][i];
+            i++;
+        }
+        buf_to[MAX_BUF - 1] = '\n';
+
+        // reset enter indicator
+        enter_buf[running_term] = 0;
+        count_char[running_term] = 0;
+        sti();
     }
-    buf_to[MAX_BUF - 1] = '\n';
-
-    // reset enter indicator
-    enter_buf[running_term] = 0;
-    count_char[running_term] = 0;
-    sti();
     return i;
 }
 
