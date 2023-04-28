@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include "vga.h"
 
-#define PIT_DIVIDER 11931   // set T=30ms, floor(1193182Hz*10ms)
+#define PIT_DIVIDER 11931   // set T=10ms, floor(1193182Hz*10ms)
 // #define PIT_DIVIDER 35793   // set T=30ms, floor(1193182Hz*30ms)
 #define PIT_MODE 0x36   // channel 0, lobite/hibite, square wave generator
 #define PIT_DATA_MASK 0x0F  // used for 8-bit data port
