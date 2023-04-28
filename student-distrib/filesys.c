@@ -259,7 +259,7 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
     }
     for (i = 0; i < 64; i++) {
         if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
-            strncpy((direc_entry_start_ptr+i)->file_name, name, 32);
+            strncpy((int8_t *)(direc_entry_start_ptr+i)->file_name, (int8_t *)name, 32);
             (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 
             (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
             inode_map[avail_inode] = 1;
@@ -326,7 +326,7 @@ int32_t write_file(int32_t fd, const void* buf, int32_t nbytes) {
         return -1;
     }
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
-    int32_t bWritten = write_data(pcb_ptr->fd[fd].inode, buf, nbytes);
+    int32_t bWritten = write_data(pcb_ptr->fd[fd].inode, (uint8_t *)buf, nbytes);
     return bWritten;
 }
 
