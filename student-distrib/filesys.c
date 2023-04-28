@@ -10,11 +10,28 @@
 *   RETURN VALUE: none
 *   SIDE EFFECTS: our file system is mapped to the img.
 */
+data_block_map_t dblock_map; 
+int inode_map[64] = {0};
 void filesys_init(uint32_t filesys_addr) {
+    int i, j, tmp; 
     boot_block_ptr = (boot_block_t*)filesys_addr; // initialize all the global pointers
     inode_start_ptr = (inode_t*)(boot_block_ptr+1);
     data_start_ptr = (data_block_t*)(inode_start_ptr+boot_block_ptr->num_inodes);
     direc_entry_start_ptr = boot_block_ptr->dir_entries;
+    for (i = 0; i < 256; i++) {
+        dblock_map.in_use[i] = 0;
+    }
+    dblock_map.num_datablocks_active = 0;
+    for (i = 0; i < boot_block_ptr->num_inodes; i++) {
+        tmp = (inode_start_ptr+i)->length / 4096 + 1; // this is how many datablocks is being used by the inode;
+        for (j = 0; j < tmp; j++) {
+            dblock_map.in_use[(inode_start_ptr+i)->data_blocks[j]] = 1; // fill in which data blocks are already being used by the file system.
+        }
+        dblock_map.num_datablocks_active += tmp; 
+    }
+    for (i = 0; i < boot_block_ptr->num_dir_entries; i++) {
+        inode_map[(direc_entry_start_ptr+i)->inode_num] = 1;
+    }
 }
 
 /*
@@ -125,7 +142,58 @@ int32_t read_data(uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length
     }
     return bytes_read;
 }
+// returns the number of bytes successfully written to the file. 
+int32_t write_data(uint32_t inode, uint8_t* buf, uint32_t length) {
+    if (inode >= boot_block_ptr->num_inodes || buf == NULL) { // is the inode valid check.
+        return 0; 
+    }
+    int i;
+    int bytes_written = 0;
+    inode_t* inode_b = inode_start_ptr+inode; // the pointer to the inode to our file. 
+    int len = inode_b->length;
+    int data_block_index = len/4096; 
+    int start_index = len % 4096;
+    int buf_idx = 0;
+    if (start_index == 0) {
+        for (i = 0; i < 256; i++) {
+            if (dblock_map.in_use[i] == 0) {
+                inode_b->data_blocks[data_block_index] = i;
+            }
+        }
+    }
 
+    for (i = start_index; i < 4096; i++) { // this loop ensures that we always start to read from byteIndex 0 in the next loop. 
+        if (bytes_written == length) { // done condition
+            break; 
+        } else { // copy data into buffer and increment/decrement counters.
+            (data_start_ptr+(inode_b->data_blocks[data_block_index]))->data[i] = buf[buf_idx]; 
+            bytes_written++;
+            buf_idx++;
+            inode_b->length++;
+        }
+    }
+    while (bytes_written != length) { // execute until all bytes are written to the file. 
+        // check if the current most data block has space available. 
+        // if we hit the end of this data block, check the map for the next available one and keep writing
+        data_block_index++;
+        for (i = 0; i < 1024; i++) {
+            if (dblock_map.in_use[i] == 0) {
+                inode_b->data_blocks[data_block_index] = i; // find the next available data block. 
+            }
+        }
+        for (i = 0; i < 4096; i++) {
+            if (bytes_written == length) {
+                break;
+            } else {
+                (data_start_ptr+(inode_b->data_blocks[data_block_index]))->data[i] = buf[buf_idx];
+                bytes_written++;
+                buf_idx++;
+                inode_b->length++;
+            }
+        }
+    }
+    return bytes_written; 
+}
 /*
 * read_directory
 *   DESCRIPTION: reads a directory (copies name of a file inside the directory into a buffer)
@@ -166,10 +234,41 @@ int32_t open_directory(const uint8_t* filename) {
 
 /*
 * write_directory
-*  DOES NOTHING WE ARE READ ONLY FILE SYSTEM. 
+*  DOES NOTHING WE ARE READ ONLY FILE SYSTEM. ** EC IS WRITEABLE FILE SYSTEM**
+*  THIS FUNCTION WILL NOW CREATE A NEW FILE IN THE FILESYSTEM, VIA 'TOUCH' COMMAND IN TERMINAL
+*  buf is the file name 
 */
 int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
-    return -1;
+    directory_entry_t* dentry;
+    if (fd < 2 || fd > 7) {
+        return -1; 
+    }
+    int i, j;
+    int avail_inode = -1;
+    uint8_t* name = (uint8_t*) buf; 
+    if (name == NULL || strlen((int8_t*)(buf)) > 32) { // check if name is valid, i.e. not null and not more than 32 characters.
+        return -1; 
+    }
+    for (j = 0; j < 64; j++) {
+        if (inode_map[j] == 0) {
+            avail_inode = j;
+        }
+    } 
+    if (avail_inode == -1) {
+        return -1; 
+    }
+    for (i = 0; i < 64; i++) {
+        if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
+            strncpy((direc_entry_start_ptr+i)->file_name, name, 32);
+            (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 
+            (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
+            inode_map[avail_inode] = 1;
+            (inode_start_ptr+avail_inode)->length = 0;
+            boot_block_ptr->num_dir_entries++;
+            return 0;
+        }
+    }
+    return -1; 
 }
 
 /*
@@ -220,9 +319,15 @@ int32_t open_file(const uint8_t* filename) {
 /*
 * write_file
 *   USELESS WE ARE A READ ONLY FILE SYSTEM.
+*   NOW WE HAVE IMPLEMENTED THIS. 
 */
 int32_t write_file(int32_t fd, const void* buf, int32_t nbytes) {
-    return -1;
+    if (buf == 0) {
+        return -1;
+    }
+    pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+    int32_t bWritten = write_data(pcb_ptr->fd[fd].inode, buf, nbytes);
+    return bWritten;
 }
 
 /*

@@ -585,7 +585,74 @@ int file_listing_test() {
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
+int write_file_test() // 36164 bytes
+{
+	clear();
+	//TEST_HEADER;
+	int i;
+	int res;
+	int bytes_written; 
+	int8_t buf[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+	uint8_t read[200];
+	uint8_t fname[] = "frame0.txt";
+	directory_entry_t dentry;
+	read_dentry_by_name(fname, &dentry);
+	bytes_written = write_data(dentry.inode_num, (uint8_t*)buf, (uint32_t)strlen(buf));
+	res = read_data(dentry.inode_num, 0, read, 300);
+	printf("bytes written: %d \n", bytes_written);
+	printf("bytes read: %d \n", res);
+	printf("inode num: %d", dentry.inode_num);
+	printf("\n");
+	for(i = 0; i < res; i++) {
+		printf("%c", read[i]);
+	}
+	return PASS;
+}
 
+int write_to_direc() {
+	clear();
+	char buf[] = "txt";
+	uint8_t fname[] = "txt";
+	write_directory(3, buf, 1);
+	directory_entry_t dentry;
+	printf("num inodes: %d \n", boot_block_ptr->num_inodes);
+	printf("num directory entries: %d \n", boot_block_ptr->num_dir_entries);
+	read_dentry_by_name(fname, &dentry);
+	printf("name length %d \n", strlen((int8_t*)dentry.file_name));
+	printf("inode num %d", dentry.inode_num);
+	if (read_dentry_by_name(fname, &dentry) == 0) {
+		return PASS;
+	}
+	return FAIL;
+}
+
+int write_to_direc_with_data() {
+	clear();
+	int res;
+	int bytes_written; 
+	int i;
+	char buf[] = "testing.txt";
+	uint8_t fname[] = "testing.txt";
+	write_directory(3, buf, 1);
+	directory_entry_t dentry;
+	int8_t data[] = "This is a new file, stanley's lee sin  \n needs to get perma banned bc it hard carries every game XDDDDDDDDD";
+	uint8_t read[200];
+	if (read_dentry_by_name(fname, &dentry) == -1) {
+		return FAIL;
+	}
+	// printf("dentry inode num %d \n", dentry.inode_num);
+	// printf("length of new file %d", (inode_start_ptr+dentry.inode_num)->length);
+	bytes_written = write_data(dentry.inode_num, (uint8_t*)data, (uint32_t)strlen(data));
+	res = read_data(dentry.inode_num, 0, read, 300);
+	printf("bytes written: %d \n", bytes_written);
+	printf("bytes read: %d \n", res);
+	printf("inode num: %d", dentry.inode_num);
+	printf("\n");
+	for(i = 0; i < res; i++) {
+		printf("%c", read[i]);
+	}
+	return PASS;
+}
 
 
 void test_VGA() {
@@ -603,6 +670,13 @@ void test_VGA() {
 	while(1){};
 }
 
+// int new_file_and_write() {
+// 	clear();
+// 	char buf[] = "testingifexist.txt";
+// 	uint8_t fname[] = "testingifexist.txt";
+// 	write_directory(3, buf, 1);
+// 	directory_entry_t dentry;
+// }
 /* Test suite entry point */
 void launch_tests()
 {
@@ -642,4 +716,11 @@ void launch_tests()
     // TEST_OUTPUT("divide zero", divide_zero_test());
     // TEST_OUTPUT("keyboard test", keyboard_test());
 	test_VGA();
+	//TEST_OUTPUT("rtc_read_write_test", rtc_read_write_test());
+    // TEST_OUTPUT("int_test", int_test());
+    // TEST_OUTPUT("divide zero", divide_zero_test());
+    // TEST_OUTPUT("keyboard test", keyboard_test());
+	//TEST_OUTPUT("write_file_test", write_file_test());
+	//TEST_OUTPUT("write to directory", write_to_direc());
+	TEST_OUTPUT("write to a new file", write_to_direc_with_data())
 }
