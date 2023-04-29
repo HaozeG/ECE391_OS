@@ -346,7 +346,7 @@ int32_t puts(int8_t *s)
  *  Function: Output a character based on running_term. Scroll screen if needed */
 void putc(uint8_t c)
 {
-    cli();
+    // cli();
     int i;
     char *video_mem_base;
     if (running_term == display_term) {
@@ -364,6 +364,13 @@ void putc(uint8_t c)
         screen_y[running_term] = (screen_y[running_term] + 1) % NUM_ROWS;
         screen_x[running_term] = 0;
         cursor_update(screen_x[running_term], screen_y[running_term]);
+    }
+    else if (c == '\t') // handle tab
+    {
+        for (i = 0; i < 4; i++)
+        {
+            putc(' ');
+        }
     }
     else if (c == '\b') // hanlde backspace
     {
@@ -395,7 +402,7 @@ void putc(uint8_t c)
         screen_y[running_term] = (screen_y[running_term] + (screen_x[running_term] / NUM_COLS)) % NUM_ROWS;
         screen_x[running_term] %= NUM_COLS;
     }
-    sti();
+    // sti();
 }
 
 /* void putc_display(uint8_t c);
@@ -404,7 +411,7 @@ void putc(uint8_t c)
  *  Function: Output a character based on display_term. Scroll screen if needed */
 void putc_display(uint8_t c)
 {
-    cli();
+    // cli();
     int i;
     char *video_mem_base;
     if (running_term == display_term) {
@@ -422,6 +429,13 @@ void putc_display(uint8_t c)
         screen_y[display_term] = (screen_y[display_term] + 1) % NUM_ROWS;
         screen_x[display_term] = 0;
         cursor_update(screen_x[display_term], screen_y[display_term]);
+    }
+    else if (c == '\t') // handle tab
+    {
+        for (i = 0; i < 4; i++)
+        {
+            putc_display(' ');
+        }
     }
     else if (c == '\b') // hanlde backspace
     {
@@ -453,7 +467,7 @@ void putc_display(uint8_t c)
         screen_y[display_term] = (screen_y[display_term] + (screen_x[display_term] / NUM_COLS)) % NUM_ROWS;
         screen_x[display_term] %= NUM_COLS;
     }
-    sti();
+    // sti();
 }
 
 /* void scroll();
