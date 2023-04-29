@@ -40,6 +40,7 @@ void rtc_init(void) {
     outb(RTC_REG_A, RTC_PORT);            //set index to reg A
     prev = inb(RTC_DATA);
     outb(RTC_REG_A, RTC_PORT);          //setting RS values
+    outb( (prev & 0xF0) | 0x06, RTC_DATA);  // set initial frequency to 1024Hz
     //outb( (prev & 0xF0) | 0x0F, RTC_DATA);  //set initial frequency to 2Hz --> allen: the default rate should already be 1024 hz
     enable_irq(RTC_VEC - IRQ_BASE_VEC);
 }
@@ -57,6 +58,8 @@ void rtc_handler(void) {
     //printf("RTC GENERATED");
     int i;
     send_eoi(RTC_VEC - IRQ_BASE_VEC);
+    outb(RTC_REG_C, RTC_PORT);  //selects register C
+    inb(RTC_DATA);    //throw away contents
     // schedule_disable = 1;
     for (i = 0; i < NUM_TERM; i++) {
         if (ticker[i] < threshold[i]) {
@@ -66,8 +69,6 @@ void rtc_handler(void) {
             flag_wait[i] = 1;
         }
     }
-    outb(RTC_REG_C, RTC_PORT);  //selects register C
-    inb(RTC_DATA);    //throw away contents
     // schedule_disable = 1;
 
     // cli();
