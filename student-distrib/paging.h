@@ -2,7 +2,7 @@
 #define PAGING_H
 #include "types.h"
 
-#define NUM_PROCESS_MAX 7
+#define NUM_PROCESS_MAX 8
 
 #define PAGE_SIZE 1024
 #define ALIGNMENT4KIB 4096
