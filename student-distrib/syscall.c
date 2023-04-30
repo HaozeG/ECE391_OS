@@ -375,7 +375,7 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
         return SYSCALL_FAIL;
     }
     pcb_t *current_pcb = get_pcb_ptr(current_pid);
-    if (current_pcb->args[0] == '\0')
+    if (current_pcb->args[0] == '\0' || (strlen((int8_t *)current_pcb->args) + 1) > n_bytes)
     {
         return SYSCALL_FAIL;
     }

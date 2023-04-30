@@ -232,3 +232,16 @@ Solution:
     Change the putc function, so that it will do nothing when the input is
     null, and do normal output if the input is '\t'. Then we handle the tab 
     directly in keyboard handler without putc.
+
+<--------------------------------------------------------->
+                          BUG 14                          
+<--------------------------------------------------------->
+Time:
+    2023.4.30.
+Creator:
+    Haoze Gao.
+Description:
+    get_args is not checked correctly. Need to verify the length of argument
+    and buffer that it writes to.
+Solution:
+    Add a check for the length of argument with a NULL.
