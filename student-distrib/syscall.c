@@ -114,7 +114,7 @@ int32_t sys_execute(const uint8_t* command) {
     uint32_t new_pid = 0;
     int32_t prog_eip;
     int32_t return_val;
-    int32_t i;
+    int32_t i,j;
     uint8_t cmd[128],arg[128];
 
     cli();
@@ -131,12 +131,25 @@ int32_t sys_execute(const uint8_t* command) {
           {
             strncpy ((int8_t *)cmd, (int8_t *)command, i);
             cmd[i] = '\0';
-            strncpy ((int8_t *)arg, (int8_t *)(command + i + 1), (uint32_t)(command_len - i - 1));
-            arg[command_len - i - 1] = '\0';
-            break;
+            for (j = i+1; j < command_len; j++) // strip leading spaces
+            {
+                if (command[j] != ' ')
+                    break;
+            }
+            if (j==command_len)
+            {
+                arg[0] = '\0';
+                break;
+            }
+            else
+            {
+                strncpy ((int8_t *)arg, (int8_t *)(command + j), (uint32_t)(command_len - j));
+                arg[command_len - j] = '\0';
+                break;
+            }
           }
     }
-    if (i==command_len)
+    if (i==command_len) // no space found
     {
         strncpy ((int8_t *)cmd, (int8_t *)command, i);
         cmd[i] = '\0';
@@ -375,7 +388,7 @@ int32_t sys_getargs(uint8_t* buf, int32_t n_bytes) {
         return SYSCALL_FAIL;
     }
     pcb_t *current_pcb = get_pcb_ptr(current_pid);
-    if (current_pcb->args[0] == '\0')
+    if (current_pcb->args[0] == '\0' || (strlen((int8_t *)current_pcb->args) + 1) > n_bytes)
     {
         return SYSCALL_FAIL;
     }
