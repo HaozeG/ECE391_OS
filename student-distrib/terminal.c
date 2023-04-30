@@ -49,10 +49,10 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
         return -1;
     }
     if (is_mode_X) {
+        cli();
         // clear current kbd buffer
         count_char[running_term] = 0;
         // return immediately if any key pressed
-        cli();
         while(count_char[running_term] == 0) {
             sti();
             // create delay
@@ -70,17 +70,16 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
         // output existing contents in keyboard buffer to screen
         kbd_buffer[running_term][count_char[running_term]] = '\0';
         puts((int8_t *)kbd_buffer[running_term]);
-        sti();
         // Wait until enter pressed
         while (!enter_buf[running_term])
         {
-            // // create delay
-            // for (i = 0; i < 200; i++)
-            // {
-            // }
-            // cli();
+            sti();
+            // create delay
+            for (i = 0; i < 200; i++)
+            {
+            }
+            cli();
         };
-        cli();
 
         i = 0;
         // MAX_BUF: up to 128 characters
