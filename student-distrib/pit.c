@@ -3,8 +3,10 @@
 #include "i8259.h"
 #include "idt.h"
 #include "scheduler.h"
+#include "vga.h"
 
 #define PIT_DIVIDER 11931   // set T=10ms, floor(1193182Hz*10ms)
+// #define PIT_DIVIDER 35793   // set T=30ms, floor(1193182Hz*30ms)
 #define PIT_MODE 0x36   // channel 0, lobite/hibite, square wave generator
 #define PIT_DATA_MASK 0x0F  // used for 8-bit data port
 #define PIT_DATA_PORT_0 0x40
@@ -60,13 +62,19 @@ void pit_init() {
 *   SIDE EFFECTS: trigger scheduler to switch task
 */
 void pit_handler() {
-    cli();
+    // cli();
     send_eoi(PIT_VEC - IRQ_BASE_VEC);
-    sti();
     if (!--cnt) {
-        cnt = 1000;  // 0.1Hz signal
+        cnt = 100;  // 1Hz signal
+        // if (is_mode_X) {
+        //     show_screen();
+        // }
         // putc('t');
+        // schedule();
     }
+    // sti();
     // trigger scheduler
-    schedule();
+    if (!is_mode_X){
+        schedule();
+    }
 }

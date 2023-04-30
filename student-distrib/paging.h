@@ -2,14 +2,20 @@
 #define PAGING_H
 #include "types.h"
 
-#define NUM_PROCESS_MAX 7
+#define NUM_PROCESS_MAX 8
 
 #define PAGE_SIZE 1024
 #define ALIGNMENT4KIB 4096
 #define VID_MEM_ADDR 0xB8000
+#define VID_MEM_TERM0 0xB9000
+#define VID_MEM_TERM1 0xBA000
+#define VID_MEM_TERM2 0xBB000
 #define KERNEL_ADDR 0x400000
 #define USER_ADDR_VIRTUAL 0x8000000 // start at 128MB
+#define fourKB 0x01000
 #define fourMB 0x400000
+#define VID_MEM_ADDR_MODEX 0xA0000	// 0xA0000 - 0xAFFFF
+#define VID_MEM_SIZE_MODEX 0x20	// (2 * 0x10000 / 0x1000(4KiB)) double_buffer
 #ifndef ASM
 
 typedef union direc_entry {
@@ -43,7 +49,7 @@ typedef union direc_entry {
         uint32_t avail : 3;
         uint32_t page_base_addr: 20;
     } pde_page_table __attribute__((packed));
-} pde_t; 
+} pde_t;
 
 typedef struct table_entry {
     uint32_t present : 1;
@@ -57,7 +63,7 @@ typedef struct table_entry {
     uint32_t global_page :1;
     uint32_t avail :3;
     uint32_t page_base_addr :20;
-}__attribute__((packed)) pte_t; 
+}__attribute__((packed)) pte_t;
 
 // pack up pd, pt for each process
 typedef struct {
@@ -75,6 +81,7 @@ process_paging_t process_paging[NUM_PROCESS_MAX] __attribute__((aligned(ALIGNMEN
 extern void page_init(uint32_t pid);
 extern void loadPageDirectory(pde_t*);
 extern void enablePaging();
+extern void paging_init_mode_X(uint32_t pid);
 
 #endif /* ASM */
 

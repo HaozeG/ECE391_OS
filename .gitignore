@@ -115,3 +115,5 @@ student-distrib/*.o
 student-distrib/*.dep
 .vscode/
 *.json
+student-distrib/bootimg
+student-distrib/mp3.img

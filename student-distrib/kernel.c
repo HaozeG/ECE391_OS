@@ -162,7 +162,6 @@ void entry(unsigned long magic, unsigned long addr) {
     pit_init();
 
     printf("Enabling Interrupts\n");
-    sti();
 
 #ifdef RUN_TESTS
     /* Run tests */

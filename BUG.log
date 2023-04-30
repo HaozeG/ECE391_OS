@@ -141,3 +141,94 @@ Solution:
     instead of giving the same function pointer table to stdin, stdout. Create
     a handler function to handle invalid file operation.
 
+<=========================================================>
+<=================>    BUG LOG HEADER   <=================>
+<=========================================================>
+Assignment:
+    MP3
+CheckPoint:
+    CP5
+CreateTime:
+    2023.4.20
+
+<--------------------------------------------------------->
+                          BUG 9                          
+<--------------------------------------------------------->
+Time:
+    2023.4.20.
+Creator:
+    Haoze Gao.
+Description:
+    Creating maximum number of processes in the first terminal
+    without going to other terminals before cause problem. Cannot 
+    successfully create proces and could break the machine when trying 
+    to change between terminals in that situation.
+Solution:
+    Reserve several pids for base shell process of each terminal. Use 
+    those pid numbers as new_pid when switching to certain terminal for 
+    the first time.
+
+<--------------------------------------------------------->
+                          BUG 10                          
+<--------------------------------------------------------->
+Time:
+    2023.4.20.
+Creator:
+    Haoze Gao.
+Description:
+    Exception happen before setting up the base shell of terminal 1.
+    PIT triggers schedule before setting up the context of process 1
+    i.e. nothing in run_queue.
+Solution:
+    Check in scheduler if anything already in run_queue.
+
+<--------------------------------------------------------->
+                          BUG 11                          
+<--------------------------------------------------------->
+Time:
+    2023.4.21.
+Creator:
+    Haoze Gao.
+Description:
+    Running pingpong in three terminals would make the output
+    not responsive/laggy. Scheduler changes to another process
+    and it would respond to RTC interrupt, which should be handled
+    by the process providing display output. 
+Solution:
+    Virtualize RTC so that the interrupt handling does not directly
+    affect the variable used to monitor the condition blocking rtc_read.
+    Now different terminal could run process with different frequency 
+    as this frequency is virtualized by monitoring ticks(+1 when RTC interrupt)
+    and threshold(not affected by RTC).
+
+<--------------------------------------------------------->
+                          BUG 12                          
+<--------------------------------------------------------->
+Time:
+    2023.4.21.
+Creator:
+    Haoze Gao.
+Description:
+    Keyboard input not always show on current terminal. When scheduler
+    change running_term to another process, the keyboard buffer is not
+    chosen correctly. Also, the area of video memory to write to is not
+    correct.
+Solution:
+    Always choose display_term as the index of keyboard buffer to update.
+    Create separate putc, clear, function for keyboard input that requires 
+    writing to display_term related area. 
+
+<--------------------------------------------------------->
+                          BUG 13                          
+<--------------------------------------------------------->
+Time:
+    2023.4.22.
+Creator:
+    Haowen Zheng.
+Description:
+    When doing cat + executable file, the output contains huge space and 
+    the content is not completly matched.
+Solution:
+    Change the putc function, so that it will do nothing when the input is
+    null, and do normal output if the input is '\t'. Then we handle the tab 
+    directly in keyboard handler without putc.

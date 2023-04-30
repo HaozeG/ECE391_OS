@@ -3,6 +3,9 @@
 
 #include "lib.h"
 #include "keyboard.h"
+#include "terminal.h"
+#include "paging.h"
+#include "scheduler.h"
 
 #define VIDEO 0xB8000
 #define NUM_COLS 80
@@ -15,12 +18,12 @@
 //     ^--------back colour bright bit OR enables blinking Text
 int8_t ATTRIB_FORE = 0x7;
 int8_t ATTRIB_BACK = 0x0;
-#define ATTRIB_BG ((0x7 & 0x0F) | (0x0 & 0x0F) << 4)    // default white & black
+#define ATTRIB_BG ((0x7 & 0x0F) | (0x0 & 0x0F) << 4) // default white & black
 #define ATTRIB_TEXT ((ATTRIB_FORE & 0x0F) | ((ATTRIB_BACK & 0x0F) << 4))
 
 // Cursor position on screen
-int screen_x;
-int screen_y;
+int screen_x[NUM_TERM];
+int screen_y[NUM_TERM];
 static char *video_mem = (char *)VIDEO;
 
 // Cursor related ports and registers
@@ -33,6 +36,7 @@ static char *video_mem = (char *)VIDEO;
 #define REG_CURSOR_LOC_HIGH 0x0E
 
 void scroll();
+void scroll_display();
 
 // Cursor
 /* void cursor_enable()
@@ -78,6 +82,10 @@ void cursor_disable()
  * Ref: Osdev-Text Mode Cursor */
 void cursor_update(int x, int y)
 {
+    // only update cursor for displaying terminal
+    if (display_term != running_term) {
+        return;
+    }
     uint16_t pos;
     if (x < 0 || x >= NUM_COLS || y < 0 || y >= NUM_ROWS)
     {
@@ -138,15 +146,47 @@ void set_color(int8_t attr, int8_t select)
 void clear(void)
 {
     int32_t i;
+    char *video_mem_base;
+    schedule_disable = 1;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * running_term);
+    }
     for (i = 0; i < NUM_ROWS * NUM_COLS; i++)
     {
-        *(uint8_t *)(video_mem + (i << 1)) = ' ';
-        *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB_BG;
+        *(uint8_t *)(video_mem_base + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem_base + (i << 1) + 1) = ATTRIB_BG;
+    }
+    schedule_disable = 0;
+    // reset to top left corner
+    screen_x[running_term] = 0;
+    screen_y[running_term] = 0;
+    cursor_update(screen_x[running_term], screen_y[running_term]);
+}
+
+/* void clear_display(void);
+ * Inputs: void
+ * Return Value: none
+ * Function: Clears video memory */
+void clear_display(void)
+{
+    int32_t i;
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * display_term);
+    }
+    for (i = 0; i < NUM_ROWS * NUM_COLS; i++)
+    {
+        *(uint8_t *)(video_mem_base + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem_base + (i << 1) + 1) = ATTRIB_BG;
     }
     // reset to top left corner
-    screen_x = 0;
-    screen_y = 0;
-    cursor_update(screen_x, screen_y);
+    screen_x[display_term] = 0;
+    screen_y[display_term] = 0;
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* Standard printf().
@@ -281,7 +321,7 @@ int32_t printf(int8_t *format, ...)
         }
         buf++;
     }
-    cursor_update(screen_x, screen_y);
+    cursor_update(screen_x[running_term], screen_y[running_term]);
     return (buf - format);
 }
 
@@ -303,19 +343,27 @@ int32_t puts(int8_t *s)
 /* void putc(uint8_t c);
  * Inputs: uint_8* c = character to print
  * Return Value: void
- *  Function: Output a character to the console. Scrool screen if needed */
+ *  Function: Output a character based on running_term. Scroll screen if needed */
 void putc(uint8_t c)
 {
+    // cli();
     int i;
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * running_term);
+    }
+
     if (c == '\n' || c == '\r')
     {
-        if ((screen_y + 1) % NUM_ROWS == 0)
+        if ((screen_y[running_term] + 1) % NUM_ROWS == 0)
         {
             scroll();
         }
-        screen_y = (screen_y + 1) % NUM_ROWS;
-        screen_x = 0;
-        cursor_update(screen_x, screen_y);
+        screen_y[running_term] = (screen_y[running_term] + 1) % NUM_ROWS;
+        screen_x[running_term] = 0;
+        cursor_update(screen_x[running_term], screen_y[running_term]);
     }
     else if (c == '\t') // handle tab
     {
@@ -326,7 +374,7 @@ void putc(uint8_t c)
     }
     else if (c == '\b') // hanlde backspace
     {
-        if (kbd_buffer[count_char - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
+        if (kbd_buffer[running_term][count_char[running_term] - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
         {
             for (i = 0; i < 4; i++)
             {
@@ -336,21 +384,90 @@ void putc(uint8_t c)
         else
             delc();
     }
+    else if (c == '\0') {
+        return;
+    }
     else
     {
         // check if needs scrolling before output new char
-        if (screen_y != 0 && (screen_y + ((screen_x + 1) / NUM_COLS)) % NUM_ROWS == 0)
+        if (screen_y[running_term] != 0 && (screen_y[running_term] + ((screen_x[running_term] + 1) / NUM_COLS)) % NUM_ROWS == 0)
         {
             scroll();
         }
-        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
-        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_TEXT;
-        screen_x++;
-        cursor_update(screen_x, screen_y);
+        *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[running_term] + screen_x[running_term]) << 1)) = c;
+        *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[running_term] + screen_x[running_term]) << 1) + 1) = ATTRIB_TEXT;
+        screen_x[running_term]++;
+        cursor_update(screen_x[running_term], screen_y[running_term]);
         // Auto wrap(increment y before resetting x)
-        screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-        screen_x %= NUM_COLS;
+        screen_y[running_term] = (screen_y[running_term] + (screen_x[running_term] / NUM_COLS)) % NUM_ROWS;
+        screen_x[running_term] %= NUM_COLS;
     }
+    // sti();
+}
+
+/* void putc_display(uint8_t c);
+ * Inputs: uint_8* c = character to print
+ * Return Value: void
+ *  Function: Output a character based on display_term. Scroll screen if needed */
+void putc_display(uint8_t c)
+{
+    // cli();
+    int i;
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * display_term);
+    }
+
+    if (c == '\n' || c == '\r')
+    {
+        if ((screen_y[display_term] + 1) % NUM_ROWS == 0)
+        {
+            scroll_display();
+        }
+        screen_y[display_term] = (screen_y[display_term] + 1) % NUM_ROWS;
+        screen_x[display_term] = 0;
+        cursor_update(screen_x[display_term], screen_y[display_term]);
+    }
+    else if (c == '\t') // handle tab
+    {
+        for (i = 0; i < 4; i++)
+        {
+            putc_display(' ');
+        }
+    }
+    else if (c == '\b') // hanlde backspace
+    {
+        if (kbd_buffer[display_term][count_char[display_term] - 1] == '\t') // if the last char in kbd_buffer is '\t', then delete four char
+        {
+            for (i = 0; i < 4; i++)
+            {
+                delc_display();
+            }
+        }
+        else
+            delc_display();
+    }
+    else if (c == '\0') {
+        return;
+    }
+    else
+    {
+        // check if needs scrolling before output new char
+        if (screen_y[display_term] != 0 && (screen_y[display_term] + ((screen_x[display_term] + 1) / NUM_COLS)) % NUM_ROWS == 0)
+        {
+            scroll_display();
+        }
+        *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1)) = c;
+        *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1) + 1) = ATTRIB_TEXT;
+        screen_x[display_term]++;
+        cursor_update(screen_x[display_term], screen_y[display_term]);
+        // Auto wrap(increment y before resetting x)
+        screen_y[display_term] = (screen_y[display_term] + (screen_x[display_term] / NUM_COLS)) % NUM_ROWS;
+        screen_x[display_term] %= NUM_COLS;
+    }
+    // sti();
 }
 
 /* void scroll();
@@ -360,20 +477,55 @@ void putc(uint8_t c)
 void scroll()
 {
     int32_t i;
-    memmove(video_mem, video_mem + (NUM_COLS << 1), ((NUM_COLS * (NUM_ROWS - 1)) << 1));
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * running_term);
+    }
+    memmove(video_mem_base, video_mem_base + (NUM_COLS << 1), ((NUM_COLS * (NUM_ROWS - 1)) << 1));
     i = (NUM_COLS * (NUM_ROWS - 1));
     // clear bottom line
     for (i = (NUM_COLS * (NUM_ROWS - 1)); i < (NUM_COLS * NUM_ROWS); i++)
     {
-        *(uint8_t *)(video_mem + (i << 1)) = ' ';
-        *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB_BG;
+        *(uint8_t *)(video_mem_base + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem_base + (i << 1) + 1) = ATTRIB_BG;
     }
     // Update cursor
-    if (screen_y != 0)
+    if (screen_y[running_term] != 0)
     {
-        screen_y--;
+        screen_y[running_term]--;
     }
-    cursor_update(screen_x, screen_y);
+    cursor_update(screen_x[running_term], screen_y[running_term]);
+}
+
+/* void scroll_display();
+ * Inputs: none
+ * Return Value: void
+ *  Function: Scroll down one line */
+void scroll_display()
+{
+    int32_t i;
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * display_term);
+    }
+    memmove(video_mem_base, video_mem_base + (NUM_COLS << 1), ((NUM_COLS * (NUM_ROWS - 1)) << 1));
+    i = (NUM_COLS * (NUM_ROWS - 1));
+    // clear bottom line
+    for (i = (NUM_COLS * (NUM_ROWS - 1)); i < (NUM_COLS * NUM_ROWS); i++)
+    {
+        *(uint8_t *)(video_mem_base + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem_base + (i << 1) + 1) = ATTRIB_BG;
+    }
+    // Update cursor
+    if (screen_y[display_term] != 0)
+    {
+        screen_y[display_term]--;
+    }
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* void delc();
@@ -383,21 +535,57 @@ void scroll()
  *           Should only called by keyboard handler*/
 void delc()
 {
-    if (screen_x == 0)
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * running_term);
+    }
+    if (screen_x[running_term] == 0)
     {
-        if (screen_y != 0)
+        if (screen_y[running_term] != 0)
         {
-            screen_x = NUM_COLS - 1; // end of row
-            screen_y--;
+            screen_x[running_term] = NUM_COLS - 1; // end of row
+            screen_y[running_term]--;
         }
     }
     else
     {
-        screen_x--;
+        screen_x[running_term]--;
     }
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
-    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB_BG;
-    cursor_update(screen_x, screen_y);
+    *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[running_term] + screen_x[running_term]) << 1)) = ' ';
+    *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[running_term] + screen_x[running_term]) << 1) + 1) = ATTRIB_BG;
+    cursor_update(screen_x[running_term], screen_y[running_term]);
+}
+
+/* void delc_display();
+ * Inputs: none
+ * Return Value: void
+ *  Function: Perform backspace in the display_term. Only delete char currently in line buffer.
+ *           Should only called by keyboard handler*/
+void delc_display()
+{
+    char *video_mem_base;
+    if (running_term == display_term) {
+        video_mem_base = (char *)VIDEO;
+    } else {
+        video_mem_base = (char *)(VID_MEM_TERM0 + fourKB * display_term);
+    }
+    if (screen_x[display_term] == 0)
+    {
+        if (screen_y[display_term] != 0)
+        {
+            screen_x[display_term] = NUM_COLS - 1; // end of row
+            screen_y[display_term]--;
+        }
+    }
+    else
+    {
+        screen_x[display_term]--;
+    }
+    *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1)) = ' ';
+    *(uint8_t *)(video_mem_base + ((NUM_COLS * screen_y[display_term] + screen_x[display_term]) << 1) + 1) = ATTRIB_BG;
+    cursor_update(screen_x[display_term], screen_y[display_term]);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);

@@ -29,6 +29,11 @@ typedef struct index_node { // 4 KiB
     uint32_t data_blocks[1023];
 } inode_t;
 
+typedef struct {
+    uint32_t num_datablocks_active;
+    uint8_t in_use[256];
+} data_block_map_t; 
+
 boot_block_t* boot_block_ptr; // global pointers to important locations
 data_block_t* data_start_ptr;
 inode_t* inode_start_ptr;
@@ -38,6 +43,7 @@ directory_entry_t* direc_entry_start_ptr;
 int32_t read_dentry_by_name (const uint8_t* fname, directory_entry_t* dentry);
 int32_t read_dentry_by_index (uint32_t index, directory_entry_t* dentry);
 int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t length);
+int32_t write_data(uint32_t inode, uint8_t* buf, uint32_t length);
 void filesys_init(uint32_t filesys_addr);
 
 // directory related functions
