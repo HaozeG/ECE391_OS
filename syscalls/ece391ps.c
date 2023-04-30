@@ -923,7 +923,9 @@ int main()
     canvas.x = 0;
     canvas.y = 0;
     canvas.preserve_mask = 0;
-    fd_vga = ece391_open((uint8_t *)"vga");
+    if (-1 == (fd_vga = ece391_open((uint8_t *)"vga"))) {
+        return 1;
+    }
     fd_rtc = ece391_open((uint8_t *)"rtc");
     
     // set RTC freq to 64Hz

@@ -9,11 +9,11 @@
 #define RTC_DATA 0x71 //RTC data port
 #define RTC_REG_A 0x8A //register A RTC
 #define RTC_REG_B 0x8B //register B RTC
-#define RTC_REG_C 0x8C //register C            
+#define RTC_REG_C 0x8C //register C
 
 
 volatile int flag_wait[NUM_TERM] = {0, 0, 0}; //used to communicate when to block interrupt
-volatile int ticker[NUM_TERM];  //  used to count the number of ints generated to set the virtual flag. 
+volatile int ticker[NUM_TERM];  //  used to count the number of ints generated to set the virtual flag.
 volatile int threshold[NUM_TERM]; // once the ticker reaches this, generate the virtual interrupt
 /*
 * rtc_init
@@ -33,7 +33,7 @@ void rtc_init(void) {
     int i;
     for (i = 0; i < NUM_TERM; i++) {
         ticker[i] = 0;
-        threshold[i] = 1; // default rate of 1024 
+        threshold[i] = 1; // default rate of 1024
         flag_wait[i] = 0;
     }
     // set rate
@@ -54,7 +54,7 @@ void rtc_init(void) {
 *   SIDE EFFECTS: none
 */
 void rtc_handler(void) {
-    // ** VIRTUALIZING THIS **  
+    // ** VIRTUALIZING THIS **
     //printf("RTC GENERATED");
     int i;
     send_eoi(RTC_VEC - IRQ_BASE_VEC);
@@ -91,7 +91,7 @@ int32_t rtc_open(const uint8_t* filename)
 {
     schedule_disable = 1;
     // set_freq(2);  //setting frequency to 2Hz ** I AM VIRTUALIZING IT **
-    threshold[running_term] = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC. 
+    threshold[running_term] = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC.
     schedule_disable = 0;
     return 0;
 }
@@ -117,16 +117,14 @@ int32_t rtc_close(int32_t fd)
 *   RETURN VALUE: 0 is success and -1 is failure
 *   SIDE EFFECTS: none
 */
-int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {    
+int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {
     schedule_disable = 1;
     sti();
     flag_wait[running_term] = 0;
-    while(flag_wait[running_term] == 0) {
-        schedule_disable = 1;
-        schedule_disable = 0;
-    };     //used to wait until interrupt
-    flag_wait[running_term] = 0;
+    ticker[running_term] = 0;
     schedule_disable = 0;
+    while(flag_wait[running_term] == 0) {};     //used to wait until interrupt
+    flag_wait[running_term] = 0;
     return 0;
 }
 
@@ -138,23 +136,23 @@ int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes) {
 *   RETURN VALUE: 0 on success, -1 failure
 *   SIDE EFFECTS: none
 */
-int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {  
+int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes) {
     int32_t freq;
     schedule_disable = 1;
-   
+
     if((nbytes != 4) || ((int32_t)buf == NULL)){ //checks to make sure within the size
         schedule_disable = 0;
         return -1;
-    }   
-    
+    }
+
     freq = *((int32_t*)buf);
     if (freq !=0 && ((freq & (freq - 1)) == 0)) {
-        threshold[running_term] = 1024 / freq; 
+        threshold[running_term] = 1024 / freq;
         schedule_disable = 0;
         return 0;
     }
     schedule_disable = 0;
-    return -1; 
+    return -1;
 
 
     //set_freq(freq);       //setting the frequency
@@ -172,12 +170,12 @@ void set_freq(int32_t freq_final)
 {
     char freq;
     unsigned char prev;
-   
+
     cli();
     outb(RTC_REG_A, RTC_PORT);    //Register A
     prev = inb(RTC_DATA);
     sti();
-   
+
     switch(freq_final){
         case 8192:
         case 4096:
@@ -195,25 +193,25 @@ void set_freq(int32_t freq_final)
         case 128:
             freq = 0x09;
             break;
-        case 64:  
+        case 64:
             freq = 0x0A;
             break;
-        case 32:  
+        case 32:
             freq = 0x0B;
             break;
-        case 16:  
+        case 16:
             freq = 0x0C;
             break;
-        case 8:  
+        case 8:
             freq = 0x0D;
             break;
-        case 4:  
+        case 4:
             freq = 0x0E;
             break;
-        case 2:  
+        case 2:
             freq = 0x0F;
             break;
-       
+
         default: return;
     }
     cli();
