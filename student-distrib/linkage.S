@@ -122,6 +122,7 @@ EXCEPT_LINK_ERRORCODE(SECURITY_EXCEPTION, common_exception_handler, 30)
 EXCEPT_LINK(RESERVED, common_exception_handler, 31)
 
 INTR_LINK(KEYBOARD_INTERRUPT, keyboard_handler)
+INTR_LINK(MOUSE_INTERRUPT, mouse_handler)
 INTR_LINK(RTC_INTERRUPT, rtc_handler)
 INTR_LINK(PIT_INTERRUPT, pit_handler)
 

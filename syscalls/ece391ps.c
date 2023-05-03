@@ -1,7 +1,9 @@
 #include <stdint.h>
+#include <string.h>
 
 #include "ece391support.h"
 #include "ece391syscall.h"
+
 // Keyboard Scancodes
 #define ENTER 0x1C
 #define BACKSPACE 0x0E
@@ -9,6 +11,9 @@
 #define ARROW_DOWN 0x50
 #define ARROW_LEFT 0x4B
 #define ARROW_RIGHT 0x4D
+
+#define CURSOR_X_DIM 10
+#define CURSOR_Y_DIM 10
 
 #define COLOR_TRANSPARENT 0xFF
 #define COLOR_WHITE 0x3F
@@ -31,6 +36,15 @@ typedef struct img_t
     int8_t preserve_mask;   // if masked value would be stored back to ptr
     int8_t *ptr;
 } img_t;
+
+typedef struct
+{
+    int mouse_x;
+    int mouse_y;
+    int mouse_l_click;
+    int mouse_r_click;
+    int mouse_m_click;
+} mouse_t;
 
 // number of background image preset
 #define NUM_BG 3
@@ -76,10 +90,11 @@ int palette_y = 0;
 int toolbox_x = 0;
 int toolbox_y = 0;
 int8_t TOOLBOX_color[8];
-static int32_t fd_vga, fd_img, fd_rtc;
+static int32_t fd_vga, fd_img, fd_rtc,fd_mouse;
 static uint8_t buf_canvas[IMAGE_X_DIM *IMAGE_Y_DIM + 1];        // buffer for canvas display
 static uint8_t buf_toolbox[TOOLBOX_WIDTH *TOOLBOX_HEIGHT + 1];  // buffer for toolbox display
 static uint8_t buf_temp[IMAGE_X_DIM *IMAGE_Y_DIM + 1];
+static uint8_t buf_mouse[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
 
 void wait(int sec);
 
@@ -917,7 +932,8 @@ int8_t get_color(int x, int y) {
 int main()
 {
     int i;
-    img_t canvas, text, temp;
+    img_t canvas, text, temp, cursor;
+
     canvas.dim_x = IMAGE_X_DIM;
     canvas.dim_y = IMAGE_Y_DIM;
     canvas.x = 0;
@@ -965,7 +981,40 @@ int main()
         ece391_write(fd_vga, &text, 0);
     }
     // TODO: start loop; ESC to exit
+    if (-1 == (fd_mouse = ece391_open((uint8_t *)"mouse")))
+    {
+        return 1;
+    }
+    cursor.dim_x = CURSOR_X_DIM;
+    cursor.dim_y = CURSOR_Y_DIM;
+    
+    cursor.ptr = (int8_t *)buf_mouse;
+    int lclick=0, rclick=0, mclick=0;
+    mouse_t mouse_data;
+    mouse_t* mouse_ptr = &mouse_data;
+    // cursor.x = 0;
+    // cursor.y = 0;
 
+    while (1) // TODO: add exit condition (press ESC?)
+    {
+        ece391_read(fd_mouse, (void *)mouse_ptr, 0);
+        
+        cursor.x = mouse_ptr->mouse_x;
+        cursor.y = mouse_ptr->mouse_y;
+        lclick = mouse_ptr->mouse_l_click;
+        rclick = mouse_ptr->mouse_r_click;
+        mclick = mouse_ptr->mouse_m_click;
+        // cursor.x = cursor.x+10;
+        // cursor.y = cursor.y+10;
+        ece391_write(fd_vga, (void *)&cursor, 0);
+        // TODO: mouse click event
+        if (lclick == 1)
+        {
+            show_palette(70, 10);
+        }
+        
+
+    }
 
     // TODO: press "T" to display toolbox
     // set up toolbox
@@ -976,7 +1025,7 @@ int main()
     // remove_toolbox();
 
     // TODO: show palette when palette select block is clicked
-    show_palette(70, 10);
+    // show_palette(70, 10);
     // wait(3);
     // remove_palette();
     while(1){};
@@ -1012,6 +1061,7 @@ int main()
     ece391_read(fd_vga, (void *)&canvas, 0);
     // image now stored in buf_canvas(320*200)
     // TODO: open new file, store
+    
 
     /*
     ---USED TO TEST CANVAS READ(vga_read)---
