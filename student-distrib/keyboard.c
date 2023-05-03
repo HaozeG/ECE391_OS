@@ -73,6 +73,12 @@ void keyboard_handler()
     if (extended) {
         switch (scan_code)
         {
+        case ESC:
+            if (is_mode_X) {
+                kbd_buffer[display_term][count_char[display_term]] = scan_code; // write to kbd buffer
+                count_char[display_term]++;
+            } 
+            break;    
         case ALT:
             alt_buf = 1;
             break;
@@ -169,6 +175,12 @@ void keyboard_handler()
         case ALT_REL:
             alt_buf = 0;
             break;
+        case ESC:
+            if (is_mode_X) {
+                kbd_buffer[display_term][count_char[display_term]] = scan_code; // write to kbd buffer
+                count_char[display_term]++;
+            } 
+            break; 
         // use keypad as cursor
         case EXT_CURSOR_UP:
             cursor_u_buf = 1;
