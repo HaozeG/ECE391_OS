@@ -6,6 +6,7 @@
 #include "rtc.h"
 #include "syscall.h"
 #include "pit.h"
+#include "mouse.h"
 
 #ifndef ASM
 
@@ -48,6 +49,7 @@ extern int32_t dispatch_syscall(int32_t num);
 extern void KEYBOARD_INTERRUPT();
 extern void RTC_INTERRUPT();
 extern void PIT_INTERRUPT();
+extern void MOUSE_INTERRUPT();
 
 int32_t dummy;  // not used
 

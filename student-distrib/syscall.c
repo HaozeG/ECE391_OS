@@ -9,6 +9,7 @@
 #include "rtc.h"
 #include "idt.h"
 #include "vga.h"
+#include "mouse.h"
 
 // variable to know which is current process
 uint32_t current_pid = 1;
@@ -29,6 +30,7 @@ static uint32_t *file_table[] = {(uint32_t *)open_file, (uint32_t *)close_file, 
 static uint32_t *dir_table[] = {(uint32_t *)open_directory, (uint32_t *)close_directory, (uint32_t *)read_directory, (uint32_t *)write_directory};
 static uint32_t *rtc_table[] = {(uint32_t *)rtc_open, (uint32_t *)rtc_close, (uint32_t *)rtc_read, (uint32_t *)rtc_write};
 static uint32_t *vga_table[] = {(uint32_t *)vga_open, (uint32_t *)vga_close, (uint32_t *)vga_read, (uint32_t *)vga_write};
+static uint32_t *mouse_table[] = {(uint32_t *)mouse_open, (uint32_t *)mouse_close, (uint32_t *)mouse_read, (uint32_t *)mouse_write};
 
 /*
 * sys_halt
@@ -336,7 +338,12 @@ int32_t sys_open(const uint8_t* filename) {
 
             if (strncmp((int8_t *)dentry.file_name, "vga", strlen("vga")) == 0) {
                 pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(vga_table);
-            } else {
+            }
+            else if (strncmp((int8_t *)dentry.file_name, "mouse", strlen("mouse")) == 0)
+            {
+                pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(mouse_table);
+            }
+            else {
                 if(dentry.file_type == 0) { // rtc
                     pcb_ptr->fd[i].file_operations_table_pointer = (fot_t*)(rtc_table);
                 } else if (dentry.file_type == 1) { // directory
