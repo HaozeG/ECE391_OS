@@ -35,7 +35,7 @@ void kalman1_init(kalman1_state *state, float init_x, float init_p)
     state->A = 1;
     state->H = 1;
     state->q = 1e1;//10e-6;  /* predict noise convariance */
-    state->r = 5e1;//10e-5;  /* measure error convariance */
+    state->r = 5e-2;//10e-5;  /* measure error convariance */
 }
 
 /*

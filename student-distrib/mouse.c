@@ -46,15 +46,15 @@ void mouse_init()
     mouse.mouse_x = IMAGE_X_DIM / 2;
     mouse.mouse_y = IMAGE_Y_DIM / 2;
 
-    // kalman1_init(&mouse_state_x, 0, 0.1);
-    // kalman1_init(&mouse_state_y, 0, 0.1);
+    kalman1_init(&mouse_state_x, 0, 0.001);
+    kalman1_init(&mouse_state_y, 0, 0.001);
 }
 
 void mouse_handler()
 {
     // return ;
     send_eoi(MOUSE_IRQ);
-    wait_for_read();
+    // wait_for_read();
     uint8_t status = inb(MOUSEIO_PORT);
     // check if the status is valid
     if (!(status & 0x08) == 0x08 || (status & 0x80) == 0x80 || (status & 0x40) == 0x40) // check x,y overflow bit and always 1 bit
@@ -67,9 +67,9 @@ void mouse_handler()
     int signY = (status & (1 << 5)) ? 1 : 0;
 
     // get x,y movement
-    wait_for_read();
+    // wait_for_read();
     int movex = inb(MOUSEIO_PORT);
-    wait_for_read();
+    // wait_for_read();
     int movey = inb(MOUSEIO_PORT);
     if (signX)
     {
@@ -86,28 +86,11 @@ void mouse_handler()
     mouse.mouse_m_click = (status & 0x04) ? 1 : 0;
 
     // update mouse position
-    // mouse.mouse_x = kalman1_filter(&mouse_state_x, movex);
-    // mouse.mouse_y = -kalman1_filter(&mouse_state_y, movey);
-    mouse.mouse_x = movex;
-    mouse.mouse_y = -movey;
-    // check if mouse is in the screen
-    // if (mouse.mouse_x < 0)
-    // {
-    //     mouse.mouse_x = 0;
-    // }
-    // if (mouse.mouse_x >= IMAGE_X_DIM)
-    // {
-    //     mouse.mouse_x = IMAGE_X_DIM - 1;
-    // }
-    // if (mouse.mouse_y < 0)
-    // {
-    //     mouse.mouse_y = 0;
-    // }
-    // if (mouse.mouse_y >= IMAGE_Y_DIM)
-    // {
-    //     mouse.mouse_y = IMAGE_Y_DIM - 1;
-    // }
-    printf("x: %d, y: %d\n", mouse.mouse_x, mouse.mouse_y);
+    mouse.mouse_x = kalman1_filter(&mouse_state_x, movex);
+    mouse.mouse_y = -kalman1_filter(&mouse_state_y, movey);
+    // mouse.mouse_x = movex;
+    // mouse.mouse_y = -movey;
+    // printf("x: %d, y: %d\n", mouse.mouse_x, mouse.mouse_y);
     return;
 }
 
@@ -186,10 +169,10 @@ int mouse_read(int32_t fd, void* buf, int32_t nbytes)
     }
     sti();
 
-    int i = 10000;
-    while (i--)
-    {
-    };
+    // int i = 10000;
+    // while (i--)
+    // {
+    // };
 
     mouse_t *mouse_buf = (mouse_t *)buf;
     mouse_buf->mouse_l_click = mouse.mouse_l_click;
@@ -197,5 +180,7 @@ int mouse_read(int32_t fd, void* buf, int32_t nbytes)
     mouse_buf->mouse_m_click = mouse.mouse_m_click;
     mouse_buf->mouse_x = mouse.mouse_x;
     mouse_buf->mouse_y = mouse.mouse_y;
+    mouse.mouse_x = 0;
+    mouse.mouse_y = 0;
     return 0;
 }

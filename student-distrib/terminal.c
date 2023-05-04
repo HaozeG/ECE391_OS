@@ -41,7 +41,7 @@ int32_t terminal_close(int32_t fd)
  */
 int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
 {
-    int32_t i;
+    int32_t i, t;
     char *buf_to = (char *)buf;
     // if (!buf_to || n_bytes > MAX_BUF || n_bytes < 0)
     if (!buf_to || n_bytes < 0)
@@ -51,9 +51,12 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t n_bytes)
     if (is_mode_X) {
         // clear current kbd buffer
         count_char[running_term] = 0;
+        kbd_buffer[running_term][0] = 0;
         // return immediately if any key pressed
         cli();
-        while(count_char[running_term] == 0) {
+        t = 0;
+        while (t++ < 1000)
+        {
             sti();
             // create delay
             for (i = 0; i < 200; i++)
