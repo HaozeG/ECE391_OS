@@ -1,3 +1,4 @@
+// Ref: https://github.com/xiahouzuoxin/kalman_filter/
 /*
  * FileName : kalman_filter.c
  * Author   : xiahouzuoxin @163.com
@@ -33,8 +34,8 @@ void kalman1_init(kalman1_state *state, float init_x, float init_p)
     state->p = init_p;
     state->A = 1;
     state->H = 1;
-    state->q = 2e2;//10e-6;  /* predict noise convariance */
-    state->r = 5e2;//10e-5;  /* measure error convariance */
+    state->q = 1e1;//10e-6;  /* predict noise convariance */
+    state->r = 5e-2;//10e-5;  /* measure error convariance */
 }
 
 /*

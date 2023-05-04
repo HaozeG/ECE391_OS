@@ -1,9 +1,11 @@
 #include "mouse.h"
 #include "kalman_filter.h"
+#include "kalman_filter.h"
 
 // global variables for mouse
 mouse_t mouse;
 kalman1_state mouse_state_x;
+kalman1_state mouse_state_y;kalman1_state mouse_state_x;
 kalman1_state mouse_state_y;
 
 void mouse_init()
@@ -35,6 +37,9 @@ void mouse_init()
     wait_ack();
     wait_for_write();
     outb(200, MOUSEIO_PORT);
+    // set scaling to 1:1
+    set_mouse_cmd(CMD_SET_SAMPLERATE);
+    wait_ack();
     // enable IRQ
     enable_irq(MOUSE_IRQ);
     mouse.mouse_l_click = 0;
@@ -43,15 +48,15 @@ void mouse_init()
     mouse.mouse_x = IMAGE_X_DIM / 2;
     mouse.mouse_y = IMAGE_Y_DIM / 2;
 
-    kalman1_init(&mouse_state_x, 2, 0.001);
-    kalman1_init(&mouse_state_y, 2, 0.001);
+    kalman1_init(&mouse_state_x, 0, 0.001);
+    kalman1_init(&mouse_state_y, 0, 0.001);
 }
 
 void mouse_handler()
 {
     // return ;
     send_eoi(MOUSE_IRQ);
-    wait_for_read();
+    // wait_for_read();
     uint8_t status = inb(MOUSEIO_PORT);
     // check if the status is valid
     if (!(status & 0x08) == 0x08 || (status & 0x80) == 0x80 || (status & 0x40) == 0x40) // check x,y overflow bit and always 1 bit
@@ -64,9 +69,9 @@ void mouse_handler()
     int signY = (status & (1 << 5)) ? 1 : 0;
 
     // get x,y movement
-    wait_for_read();
+    // wait_for_read();
     int movex = inb(MOUSEIO_PORT);
-    wait_for_read();
+    // wait_for_read();
     int movey = inb(MOUSEIO_PORT);
     if (signX)
     {
@@ -83,28 +88,10 @@ void mouse_handler()
     mouse.mouse_m_click = (status & 0x04) ? 1 : 0;
 
     // update mouse position
-    mouse.mouse_x += kalman1_filter(&mouse_state_x, movex);
-    // mouse.mouse_x += movex;
-    mouse.mouse_y -= kalman1_filter(&mouse_state_y, movey);
-    // mouse.mouse_y -= movey;
-
-    // check if mouse is in the screen
-    if (mouse.mouse_x < 0)
-    {
-        mouse.mouse_x = 0;
-    }
-    if (mouse.mouse_x >= IMAGE_X_DIM)
-    {
-        mouse.mouse_x = IMAGE_X_DIM - 1;
-    }
-    if (mouse.mouse_y < 0)
-    {
-        mouse.mouse_y = 0;
-    }
-    if (mouse.mouse_y >= IMAGE_Y_DIM)
-    {
-        mouse.mouse_y = IMAGE_Y_DIM - 1;
-    }
+    mouse.mouse_x = kalman1_filter(&mouse_state_x, movex);
+    mouse.mouse_y = -kalman1_filter(&mouse_state_y, movey);
+    // mouse.mouse_x = movex;
+    // mouse.mouse_y = -movey;
     // printf("x: %d, y: %d\n", mouse.mouse_x, mouse.mouse_y);
     return;
 }
@@ -158,6 +145,7 @@ void wait_ack()
 
 int mouse_open()
 {
+
     return 0;
 }
 
@@ -182,11 +170,19 @@ int mouse_read(int32_t fd, void* buf, int32_t nbytes)
         return -1;
     }
     sti();
+
+    // int i = 10000;
+    // while (i--)
+    // {
+    // };
+
     mouse_t *mouse_buf = (mouse_t *)buf;
     mouse_buf->mouse_l_click = mouse.mouse_l_click;
     mouse_buf->mouse_r_click = mouse.mouse_r_click;
     mouse_buf->mouse_m_click = mouse.mouse_m_click;
     mouse_buf->mouse_x = mouse.mouse_x;
     mouse_buf->mouse_y = mouse.mouse_y;
+    mouse.mouse_x = 0;
+    mouse.mouse_y = 0;
     return 0;
 }

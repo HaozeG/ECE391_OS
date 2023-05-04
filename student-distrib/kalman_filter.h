@@ -1,4 +1,4 @@
-// Ref: https://github.com/xiahouzuoxin/kalman_filter/blob/master/kalman_filter.h
+// Ref: https://github.com/xiahouzuoxin/kalman_filter/
 /*
  * FileName : kalman_filter.h
  * Author   : xiahouzuoxin @163.com
