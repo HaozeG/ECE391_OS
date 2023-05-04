@@ -21,5 +21,17 @@ int main() {
     if (-1 == ece391_write (fd, buf, cnt)){
         return 3;
     }
+    ece391_close(fd);
+    if (-1 == (fd = ece391_open ((uint8_t*)buf))) {
+        ece391_fdputs (1, (uint8_t*)"file open failed\n");
+        return 2;
+    }
+    cnt = ece391_strlen(buf); // get the length of the filename
+    // buf[cnt] = '\0';
+    // cnt++;
+    if (-1 == ece391_write (fd, buf, cnt)){
+        return 3;
+    }
+
     return 0;
 }

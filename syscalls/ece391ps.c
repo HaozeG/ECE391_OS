@@ -1033,6 +1033,7 @@ int8_t get_color(int x, int y) {
 int main()
 {
     int i;
+    int32_t fd_dir;
     img_t canvas, text, temp, cursor;
 
     canvas.dim_x = IMAGE_X_DIM;
@@ -1049,9 +1050,8 @@ int main()
     int ret_val = 64;
     ret_val = ece391_write(fd_rtc, &ret_val, 4);
 
-    if (0 == ece391_getargs (buf_canvas, 1024) && -1 != (fd_img = ece391_open ((uint8_t *)buf_canvas))) {
+    if (0 == ece391_getargs (buf_canvas, 1024) && -1 != (fd_img = ece391_open ((uint8_t *)buf_canvas)) && IMAGE_X_DIM *IMAGE_Y_DIM == ece391_read(fd_img, (void *)buf_canvas, IMAGE_X_DIM *IMAGE_Y_DIM)) {
         // use input image
-        ece391_read(fd_img, (void *)buf_canvas, IMAGE_X_DIM *IMAGE_Y_DIM);
         ece391_close(fd_img);
         canvas.ptr = (int8_t *)buf_canvas;
         ece391_write(fd_vga, (void *)&canvas, 0);
@@ -1068,6 +1068,7 @@ int main()
         // Clear text
         ece391_write(fd_vga, &text, 0);
     } else {
+        ece391_close(fd_img);
         set_canvas();
         text.x = 2;
         text.y = 2;
@@ -1248,34 +1249,27 @@ int main()
 
 
     // TODO: show palette when palette select block is clicked
-    show_palette(70, 10);
-    wait(3);
-    remove_palette();
+    // show_palette(70, 10);
+    // wait(1);
+    // remove_palette();
     // while(1){};
 
     // Below is color picker function that selects from display palette
-    temp.x = 4;
-    temp.y = 10;
-    temp.dim_x = 1;
-    temp.dim_y = 1;
-    temp.ptr = (int8_t *)buf_temp;
-    set_color_block(temp.ptr, 1, 1, 0, COLOR_WHITE);
-    ece391_write(fd_vga, (void *)&temp, 0); // the point where we pick color
-    i = get_color(4, 10);
-    temp.x = 40;
-    temp.y = 10;
-    temp.dim_x = 4;
-    temp.dim_y = 4;
-    set_color_block(temp.ptr, 4, 4, 1, i);
+    // temp.x = 4;
+    // temp.y = 10;
+    // temp.dim_x = 1;
+    // temp.dim_y = 1;
+    // temp.ptr = (int8_t *)buf_temp;
+    // set_color_block(temp.ptr, 1, 1, 0, COLOR_WHITE);
+    // ece391_write(fd_vga, (void *)&temp, 0); // the point where we pick color
+    // i = get_color(4, 10);
+    // temp.x = 40;
+    // temp.y = 10;
+    // temp.dim_x = 4;
+    // temp.dim_y = 4;
+    // set_color_block(temp.ptr, 4, 4, 1, i);
 
-    ece391_write(fd_vga, (void *)&temp, 0); // color block with the color we pick
-
-    // text.x = 100;
-    // text.y = 100;
-    // text.preserve_mask = 1;
-    // text.ptr = (int8_t *)buf_temp;
-    // put_text("HELLOWORLD", &text);
-    
+    // ece391_write(fd_vga, (void *)&temp, 0); // color block with the color we pick
     // save file
     canvas.x = 0;
     canvas.y = 0;
@@ -1285,12 +1279,23 @@ int main()
     ece391_read(fd_vga, (void *)&canvas, 0);
     // image now stored in buf_canvas(320*200)
     // TODO: open new file, store
-    fd_img = ece391_open((uint8_t *)"mydraw");
+    if (-1 == (fd_dir = ece391_open ((uint8_t*)"."))) {
+        return 2;
+    }
+    uint8_t filename[20] = "mydraw";
+    if (-1 == ece391_write (fd_dir, (void *)filename, ece391_strlen(filename))){
+        return 3;
+    }
+    ece391_close(fd_dir);
+    return 0;
+    if (-1 != (fd_dir = ece391_open((uint8_t *)filename))) {
+        return 3;
+    }
     int32_t cnt;
     cnt = ece391_strlen(buf_canvas); // get the length of the filename
     buf_canvas[cnt] = '\0';
     cnt++;
-    if (-1 == ece391_write (fd_img, buf_canvas, cnt)){
+    if (-1 == ece391_write (fd_dir, (void *)buf_canvas, cnt)){
         return 3;
     }
     return 0;
