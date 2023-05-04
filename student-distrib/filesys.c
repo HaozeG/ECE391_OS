@@ -213,13 +213,12 @@ int32_t read_directory(int32_t fd, void* buf, int32_t nbytes) { // write all fil
         return 0;
     }
     directory_entry_t dentry; 
-    int8_t *buf_to = (int8_t *)buf;
     
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
     if (read_dentry_by_index(pcb_ptr->fd[fd].file_position, &dentry) < 0) {
         return 0;
     }
-    uint32_t bytes_read = (uint32_t)strcpy(buf_to, (int8_t *)dentry.file_name, 32);
+    uint32_t bytes_read = (uint32_t)strcpy((int8_t *)buf, (int8_t *)dentry.file_name, 32);
     pcb_ptr->fd[fd].file_position++;
     
     return bytes_read;
@@ -259,25 +258,33 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
             break;
         }
     } 
-    for (j = 0; j < 64; j++) {
-        printf("%d position, %d ", j, inode_map[j]);
-    }
+    // for (j = 0; j < 64; j++) {
+    //     printf("%d position, %d ", j, inode_map[j]);
+    // }
     if (avail_inode == -1) {
         return -1; 
     }
-    for (i = 1; i < 63; i++) {
-        if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
-            inode_map[avail_inode] = 1;
-            strncpy((int8_t *)(direc_entry_start_ptr+i)->file_name, (int8_t *)name, 32);
-            (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 
-            (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
-            (inode_start_ptr+avail_inode)->length = 0;
-            boot_block_ptr->num_dir_entries++;
-            printf("%d directory entries", boot_block_ptr->num_dir_entries);
-            return 0;
-        }
-    }
-    return -1; 
+    // for (i = 1; i < 63; i++) {
+    //     if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
+    //         inode_map[avail_inode] = 1;
+    //         strncpy((int8_t *)(direc_entry_start_ptr+i)->file_name, (int8_t *)name, 32);
+    //         (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 
+    //         (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
+    //         (inode_start_ptr+avail_inode)->length = 0;
+    //         boot_block_ptr->num_dir_entries++;
+    //         printf("%d directory entries", boot_block_ptr->num_dir_entries);
+    //         return 0;
+    //     }
+    // }
+    inode_map[avail_inode] = 1;
+    int tmp = (boot_block_ptr->num_dir_entries);
+    strncpy((int8_t *)(direc_entry_start_ptr+tmp)->file_name, (int8_t *)name, 32);
+    (direc_entry_start_ptr+tmp)->file_type = 2; // we are only able to write regular files. 
+    (direc_entry_start_ptr+tmp)->inode_num = avail_inode;// allocate the next inode
+    (inode_start_ptr+avail_inode)->length = 0;
+    boot_block_ptr->num_dir_entries++;
+    //printf("%d directory entries", boot_block_ptr->num_dir_entries);
+    return 0;
 }
 
 /*
