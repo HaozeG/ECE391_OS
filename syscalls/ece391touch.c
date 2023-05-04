@@ -17,13 +17,11 @@ int main() {
         return 2;
     }
     cnt = ece391_strlen(buf); // get the length of the filename
-    printf("%d length of filename", cnt);
+    // printf("%d length of filename", cnt);
     if (-1 == ece391_write (fd, buf, cnt)){
         return 3;
     }
     ece391_close(fd);
-    // TODO: Here I have a loop to assign value for buf
-    // And manually change cnt
     int i;
     for (i = 0; i < 64000; i++) {
         buf_[i] = '2';
