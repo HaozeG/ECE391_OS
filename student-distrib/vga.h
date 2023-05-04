@@ -31,6 +31,9 @@ typedef struct img_t
 #define SCROLL_Y_DIM    IMAGE_Y_DIM                 /* upper screen size*/
 #define SCROLL_X_WIDTH  (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
 
+#define BLOCK_X     12
+#define BLOCK_Y     12
+
 #define STATUS_BAR_HEIGHT       (FONT_HEIGHT + 2)
 #define STATUS_BAR_MAX          40      // SCROLL_SIZE / FONT_WIDTH
 #define STATUS_BAR_SIZE         1440    // 320 * STATUS_BAR_HEIGHT / 4 bytes
@@ -85,6 +88,12 @@ extern void set_status_bar();
 // set the original and semi-transparent palette color
 // extern void set_color_wall(int level);
 // extern void set_color_player(int ticks);
+
+// /*store origin block info from build buffer to origin array*/
+// extern void store_origin(int x, int y, unsigned char *origin);
+
+// /*draw the block at (pos_x,pos_y) with mask, if mask = 0 then ignore that pixel.*/
+// extern void draw_block_mask(int pos_x, int pos_y, unsigned char *blk, unsigned char *mask);
 
 // draw a block of semi-transparent text
 extern void draw_floating_text(int pos_x, int pos_y, int type);

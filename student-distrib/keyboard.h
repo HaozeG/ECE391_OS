@@ -12,6 +12,7 @@
 #define KEYPORT 0x60
 
 // special scan code
+#define ESC 0x01
 #define BACKSPACE 0x0E
 #define CAPS 0x3A
 #define CTRL 0x1D

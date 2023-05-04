@@ -101,6 +101,9 @@ void init_idt() {
     // PIT
     idt[PIT_VEC].present = 1;
     SET_IDT_ENTRY(idt[PIT_VEC], PIT_INTERRUPT);
+    // Mouse
+    idt[MOUSE_VEC].present = 1;
+    SET_IDT_ENTRY(idt[MOUSE_VEC], MOUSE_INTERRUPT);
 
     lidt(idt_desc_ptr); // Load IDTR
 };
