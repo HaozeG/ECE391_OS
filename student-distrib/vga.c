@@ -1388,6 +1388,6 @@ int32_t vga_write(int32_t fd, void *buf) {
         pos_x -= x_right;
         blk += x_left;
     }
-    show_screen();
+
     return 0;
 }

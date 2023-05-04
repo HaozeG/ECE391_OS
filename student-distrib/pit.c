@@ -65,10 +65,10 @@ void pit_handler() {
     // cli();
     send_eoi(PIT_VEC - IRQ_BASE_VEC);
     if (!--cnt) {
-        cnt = 100;  // 1Hz signal
-        // if (is_mode_X) {
-        //     show_screen();
-        // }
+        cnt = 4;  // 25Hz signal
+        if (is_mode_X) {
+            show_screen();
+        }
         // putc('t');
         // schedule();
     }

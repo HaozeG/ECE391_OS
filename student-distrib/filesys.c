@@ -150,6 +150,7 @@ int32_t write_data(uint32_t inode, uint8_t* buf, uint32_t length) {
     int i;
     int bytes_written = 0;
     inode_t* inode_b = inode_start_ptr+inode; // the pointer to the inode to our file. 
+    inode_b->length = 0;
     int len = inode_b->length;
     int data_block_index = len/4096; 
     int start_index = len % 4096;
@@ -242,11 +243,10 @@ int32_t open_directory(const uint8_t* filename) {
 *  buf is the file name 
 */
 int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
-    directory_entry_t* dentry;
     if (buf == 0) {
         return 0;
     }
-    int i, j;
+    int j;
     int avail_inode = -1;
     uint8_t* name = (uint8_t*) buf; 
     if (name == NULL || strlen((int8_t*)(buf)) > 32) { // check if name is valid, i.e. not null and not more than 32 characters.
@@ -342,6 +342,7 @@ int32_t write_file(int32_t fd, const void* buf, int32_t nbytes) {
         return -1;
     }
     pcb_t* pcb_ptr = (pcb_t *)(0x00800000 - (current_pid + 1) * 0x2000);
+
     int32_t bWritten = write_data(pcb_ptr->fd[fd].inode, (uint8_t *)buf, nbytes);
     return bWritten;
 }

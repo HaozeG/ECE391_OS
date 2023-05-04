@@ -97,7 +97,8 @@ int cursor_x = IMAGE_X_DIM / 2;
 int cursor_y = IMAGE_Y_DIM / 2;
 static int32_t fd_vga, fd_img, fd_rtc, fd_mouse;
 static uint8_t buf_canvas[IMAGE_X_DIM * IMAGE_Y_DIM + 1];       // buffer for canvas display
-static uint8_t buf_toolbox[TOOLBOX_WIDTH * TOOLBOX_HEIGHT + 1]; // buffer for toolbox display
+static uint8_t buf_toolbox[TOOLBOX_WIDTH * TOOLBOX_HEIGHT + 1]; // buffer for toolbox display、
+static uint8_t buf_palette[PALETTE_HEIGHT * PALETTE_WIDTH + 1]; // buffer for palette display、
 static uint8_t buf_temp[IMAGE_X_DIM * IMAGE_Y_DIM + 1];
 // static uint8_t buf_cursor_bg[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
 static uint8_t buf_cursor[CURSOR_X_DIM * CURSOR_Y_DIM + 1] = {0};
@@ -999,10 +1000,10 @@ void set_toolbox()
 // display toolbox at (x, y)
 void show_toolbox(int8_t x, int8_t y)
 {
-    if (x < 0 || (x + TOOLBOX_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + TOOLBOX_HEIGHT) >= IMAGE_Y_DIM)
-    {
-        return;
-    }
+    // if (x < 0 || (x + TOOLBOX_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + TOOLBOX_HEIGHT) >= IMAGE_Y_DIM)
+    // {
+    //     return;
+    // }
     img_t toolbox;
     toolbox_x = x;
     toolbox_y = y;
@@ -1044,7 +1045,7 @@ void show_palette(int8_t x, int8_t y)
     palette.dim_x = PALETTE_WIDTH;
     palette.dim_y = PALETTE_HEIGHT;
     palette.preserve_mask = 1;
-    palette.ptr = (int8_t *)buf_temp;
+    palette.ptr = (int8_t *)buf_palette;
     int i;
     for (i = 0; i < palette.dim_x * palette.dim_y; i++)
     {
@@ -1065,7 +1066,7 @@ void remove_palette()
     palette.dim_x = PALETTE_WIDTH;
     palette.dim_y = PALETTE_HEIGHT;
     palette.preserve_mask = 1;
-    palette.ptr = (int8_t *)buf_temp;
+    palette.ptr = (int8_t *)buf_palette;
     ece391_write(fd_vga, (void *)&palette, 0);
 }
 
@@ -1087,6 +1088,7 @@ int main()
     int i;
     int32_t fd_dir;
     img_t canvas, text, temp, cursor;
+    int8_t current_color = COLOR_BLACK;
 
     canvas.dim_x = IMAGE_X_DIM;
     canvas.dim_y = IMAGE_Y_DIM;
@@ -1200,7 +1202,11 @@ int main()
                 cursor.preserve_mask = 1;
                 ece391_write(fd_vga, (void *)&cursor, 0);
             }
-
+            if (current_color == COLOR_BLACK) {
+                set_color_block(buf_cursor, CURSOR_X_DIM, CURSOR_Y_DIM, 1, current_color);
+            } else {
+                set_color_block2(buf_cursor, CURSOR_X_DIM, CURSOR_Y_DIM, 1, current_color);
+            }
             // draw new cursor
             cursor.preserve_mask = 1;
             cursor.x = cursor_x;
@@ -1234,44 +1240,62 @@ int main()
                 if (cursor.x>=3+toolbox_x && cursor.x<= 3+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<=16+toolbox_y+COLOR_BOX_SIZE) // color (1,1)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[0]);
+                    current_color = TOOLBOX_color[0];
                 }
                 else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y>=36+toolbox_y && cursor.y<= 36+toolbox_y+COLOR_BOX_SIZE) // color (2,1)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[2]);
+                    current_color = TOOLBOX_color[2];
                 }
                 else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,1)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[4]);
+                    current_color = TOOLBOX_color[4];
                 }
                 else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,1)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[6]);
+                    current_color = TOOLBOX_color[6];
                 }
                 else if (cursor.x>= 27+toolbox_x && cursor.x<= 27+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<= 16+toolbox_y+COLOR_BOX_SIZE) // color (1,2)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[1]);
+                    current_color = TOOLBOX_color[1];
                 }
                 else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 36 + toolbox_y && cursor.y <= 36 + toolbox_y + COLOR_BOX_SIZE) // color (2,2)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[3]);
+                    current_color = TOOLBOX_color[3];
                 }
                 else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,2)
                 {
                     set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[5]);
+                    current_color = TOOLBOX_color[5];
                 }
                 else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,2)
                 {
                     // TODO: palette
                     show_palette(toolbox_x + TOOLBOX_WIDTH + 2, toolbox_y);
-                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, get_color(palette_x + 1, palette_y + rnd));
+                    current_color = get_color(palette_x + 1, palette_y + rnd);
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, current_color);
+                    text.x = 160;
+                    text.y = 10;
+                    text.preserve_mask = 1;
+                    text.ptr = (int8_t *)buf_temp;
+                    set_text_color(COLOR_GREY, 0);
+                    set_text_color(COLOR_WHITE, 1);
+                    put_text("RANDOM COLOR!", &text);
+
+                    // Clear text
                     wait(1);
                     remove_palette();
+                    ece391_write(fd_vga, &text, 0);
                 }
                 else if (cursor.x >= toolbox_x && cursor.x <= toolbox_x + TOOLBOX_WIDTH && cursor.y >= toolbox_y && cursor.y <= toolbox_y + TOOLBOX_HEIGHT)
                 {
                     cursor.ptr = (int8_t *)buf_cursor;
-                    cursor.x = cursor_x;
-                    cursor.y = cursor_y;
+                    cursor.x = pre_cursor_x;
+                    cursor.y = pre_cursor_y;
                     cursor.preserve_mask = 1;
                     ece391_write(fd_vga, (void *)&cursor, 0);
 
@@ -1288,6 +1312,12 @@ int main()
             }
             else
             {
+                cursor.ptr = (int8_t *)buf_cursor;
+                cursor.x = pre_cursor_x;
+                cursor.y = pre_cursor_y;
+                cursor.preserve_mask = 1;
+                ece391_write(fd_vga, (void *)&cursor, 0);
+
                 cursor.ptr = (int8_t *)buf_color;
                 cursor.preserve_mask = 0;
                 cursor.x = cursor_x;
@@ -1302,6 +1332,12 @@ int main()
 
         ece391_read(0, (void *)keypress, 1);
     }
+    keypress[0] =0;
+    cursor.ptr = (int8_t *)buf_cursor;
+    cursor.x = pre_cursor_x;
+    cursor.y = pre_cursor_y;
+    cursor.preserve_mask = 1;
+    ece391_write(fd_vga, (void *)&cursor, 0);
 
     // TODO: show palette when palette select block is clicked
     // show_palette(70, 10);
@@ -1334,19 +1370,19 @@ int main()
     ece391_read(fd_vga, (void *)&canvas, 0);
     // image now stored in buf_canvas(320*200)
     // TODO: open new file, store
-    if (-1 == (fd_dir = ece391_open((uint8_t *)".")))
-    {
-        return 2;
-    }
     uint8_t filename[20] = "mydraw";
-    if (-1 == ece391_write(fd_dir, (void *)filename, ece391_strlen(filename)))
-    {
-        return 3;
-    }
-    ece391_close(fd_dir);
     if (-1 == (fd_dir = ece391_open((uint8_t *)filename)))
     {
-        return 3;
+        if (-1 == (fd_dir = ece391_open((uint8_t *)".")))
+        {
+            return 2;
+        }
+        if (-1 == ece391_write(fd_dir, (void *)filename, ece391_strlen(filename)))
+        {
+            return 3;
+        }
+        ece391_close(fd_dir);
+        fd_dir = ece391_open((uint8_t *)filename);
     }
     int32_t cnt;
     cnt = 64000; // get the length of the file
