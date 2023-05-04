@@ -260,7 +260,7 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
         }
     } 
     for (j = 0; j < 64; j++) {
-        printf("%d position, %d ", j, inode_map[j]);
+        // printf("%d position, %d ", j, inode_map[j]);
     }
     if (avail_inode == -1) {
         return -1; 
@@ -273,7 +273,7 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
             (direc_entry_start_ptr+i)->inode_num = avail_inode;// allocate the next inode
             (inode_start_ptr+avail_inode)->length = 0;
             boot_block_ptr->num_dir_entries++;
-            printf("%d directory entries", boot_block_ptr->num_dir_entries);
+            // printf("%d directory entries", boot_block_ptr->num_dir_entries);
             return 0;
         }
     }

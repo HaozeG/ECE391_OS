@@ -106,6 +106,10 @@ int32_t rtc_open(const uint8_t* filename)
 */
 int32_t rtc_close(int32_t fd)
 {
+    schedule_disable = 1;
+    // set_freq(2);  //setting frequency to 2Hz ** I AM VIRTUALIZING IT **
+    threshold[running_term] = 512; // 2 Hz means we generate int every 512 ints generated via the 1024 Hz RTC.
+    schedule_disable = 0;
     return 0;
 }
 

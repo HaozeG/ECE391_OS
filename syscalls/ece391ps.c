@@ -1093,11 +1093,10 @@ int main()
     canvas.x = 0;
     canvas.y = 0;
     canvas.preserve_mask = 0;
-    if (-1 == (fd_vga = ece391_open((uint8_t *)"vga")))
+    if (-1 == (fd_vga = ece391_open((uint8_t *)"vga")) || -1 == (fd_rtc = ece391_open((uint8_t *)"rtc")))
     {
         return 1;
     }
-    fd_rtc = ece391_open((uint8_t *)"rtc");
 
     // set RTC freq to 64Hz
     int ret_val = 64;
@@ -1124,7 +1123,6 @@ int main()
     }
     else
     {
-        ece391_close(fd_img);
         set_canvas();
         text.x = 2;
         text.y = 2;
@@ -1328,7 +1326,6 @@ int main()
 
     // ece391_write(fd_vga, (void *)&temp, 0); // color block with the color we pick
     // save file
-    return 0;
     canvas.x = 0;
     canvas.y = 0;
     canvas.dim_x = IMAGE_X_DIM;
@@ -1347,19 +1344,19 @@ int main()
         return 3;
     }
     ece391_close(fd_dir);
-    if (-1 != (fd_dir = ece391_open((uint8_t *)filename)))
+    if (-1 == (fd_dir = ece391_open((uint8_t *)filename)))
     {
         return 3;
     }
     int32_t cnt;
-    cnt = ece391_strlen(buf_canvas); // get the length of the filename
+    cnt = 64000; // get the length of the file
     buf_canvas[cnt] = '\0';
     cnt++;
-    cnt = 100;
     if (-1 == ece391_write(fd_dir, (void *)buf_canvas, cnt))
     {
         return 3;
     }
+    return 0;
 
     /*
     ---USED TO TEST CANVAS READ(vga_read)---
