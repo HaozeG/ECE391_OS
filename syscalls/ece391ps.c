@@ -7,7 +7,7 @@
 // Keyboard Scancodes
 #define ESC 0x01
 #define ENTER 0x1C
-#define T 0x14 // TODO: 
+#define T 0x14 // TODO:
 #define Q 0x10
 #define BACKSPACE 0x0E
 #define ARROW_UP 0x48
@@ -23,9 +23,9 @@
 #define COLOR_BLACK 0x00
 #define COLOR_GREY 0x2A
 #define COLOR_RED 0x30
-#define COLOR_GREEN 0x0C 
-#define COLOR_BLUE 0x03 
-#define COLOR_YELLOW 0x3C 
+#define COLOR_GREEN 0x0C
+#define COLOR_BLUE 0x03
+#define COLOR_YELLOW 0x3C
 #define COLOR_CYAN 0x0F
 static unsigned char COLOR_FOREGROUND = 0x3F;
 static unsigned char COLOR_BACKGROUND = COLOR_TRANSPARENT;
@@ -36,7 +36,7 @@ typedef struct img_t
     int32_t y;
     int32_t dim_x;
     int32_t dim_y;
-    int8_t preserve_mask;   // if masked value would be stored back to ptr
+    int8_t preserve_mask; // if masked value would be stored back to ptr
     int8_t *ptr;
 } img_t;
 
@@ -52,7 +52,7 @@ typedef struct
 // number of background image preset
 #define NUM_BG 3
 
-/* 
+/*
  * IMAGE  is the whole screen in mode X: 320x200 pixels in our flavor.
  * SCROLL is the scrolling region of the screen.
  *
@@ -63,21 +63,21 @@ typedef struct
  */
 #define FONT_HEIGHT 16
 #define FONT_WIDTH 8
-#define IMAGE_X_DIM     320   /* pixels; must be divisible by 4             */
-#define IMAGE_Y_DIM     200   /* pixels                                     */
-#define IMAGE_X_WIDTH   (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
-#define SCROLL_X_DIM    IMAGE_X_DIM                /* upper screen size     */
-#define SCROLL_Y_DIM    IMAGE_Y_DIM                 /* upper screen size*/
-#define SCROLL_X_WIDTH  (IMAGE_X_DIM / 4)          /* addresses (bytes)     */
+#define IMAGE_X_DIM 320                  /* pixels; must be divisible by 4             */
+#define IMAGE_Y_DIM 200                  /* pixels                                     */
+#define IMAGE_X_WIDTH (IMAGE_X_DIM / 4)  /* addresses (bytes)     */
+#define SCROLL_X_DIM IMAGE_X_DIM         /* upper screen size     */
+#define SCROLL_Y_DIM IMAGE_Y_DIM         /* upper screen size*/
+#define SCROLL_X_WIDTH (IMAGE_X_DIM / 4) /* addresses (bytes)     */
 
-#define STATUS_BAR_HEIGHT       (FONT_HEIGHT + 2)
-#define STATUS_BAR_MAX          40      // SCROLL_SIZE / FONT_WIDTH
-#define STATUS_BAR_SIZE         1440    // 320 * STATUS_BAR_HEIGHT / 4 bytes
+#define STATUS_BAR_HEIGHT (FONT_HEIGHT + 2)
+#define STATUS_BAR_MAX 40    // SCROLL_SIZE / FONT_WIDTH
+#define STATUS_BAR_SIZE 1440 // 320 * STATUS_BAR_HEIGHT / 4 bytes
 
-#define SCROLL_SIZE             (SCROLL_X_WIDTH * SCROLL_Y_DIM)
-#define SCREEN_SIZE             (SCROLL_SIZE * 4 + 1)
-#define BUILD_BUF_SIZE          (SCREEN_SIZE + 20000)
-#define BUILD_BASE_INIT         ((BUILD_BUF_SIZE - SCREEN_SIZE) / 2)
+#define SCROLL_SIZE (SCROLL_X_WIDTH * SCROLL_Y_DIM)
+#define SCREEN_SIZE (SCROLL_SIZE * 4 + 1)
+#define BUILD_BUF_SIZE (SCREEN_SIZE + 20000)
+#define BUILD_BASE_INIT ((BUILD_BUF_SIZE - SCREEN_SIZE) / 2)
 
 #define PALETTE_WIDTH 14
 #define PALETTE_HEIGHT 128
@@ -93,21 +93,21 @@ int palette_y = 0;
 int toolbox_x = 0;
 int toolbox_y = 0;
 int8_t TOOLBOX_color[8];
-int cursor_x = IMAGE_X_DIM/2;
-int cursor_y = IMAGE_Y_DIM/2;
-static int32_t fd_vga, fd_img, fd_rtc,fd_mouse;
-static uint8_t buf_canvas[IMAGE_X_DIM *IMAGE_Y_DIM + 1];        // buffer for canvas display
-static uint8_t buf_toolbox[TOOLBOX_WIDTH *TOOLBOX_HEIGHT + 1];  // buffer for toolbox display
-static uint8_t buf_temp[IMAGE_X_DIM *IMAGE_Y_DIM + 1];
+int cursor_x = IMAGE_X_DIM / 2;
+int cursor_y = IMAGE_Y_DIM / 2;
+static int32_t fd_vga, fd_img, fd_rtc, fd_mouse;
+static uint8_t buf_canvas[IMAGE_X_DIM * IMAGE_Y_DIM + 1];       // buffer for canvas display
+static uint8_t buf_toolbox[TOOLBOX_WIDTH * TOOLBOX_HEIGHT + 1]; // buffer for toolbox display
+static uint8_t buf_temp[IMAGE_X_DIM * IMAGE_Y_DIM + 1];
 // static uint8_t buf_cursor_bg[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
-static uint8_t buf_cursor_color[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
-// static uint8_t buf_mouse[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
+static uint8_t buf_cursor[CURSOR_X_DIM * CURSOR_Y_DIM + 1] = {0};
+static uint8_t buf_color[CURSOR_X_DIM *CURSOR_Y_DIM + 1] = {0};
 
 void wait(int sec);
 
 // TEXT PART
 
-/* 
+/*
  * These font data were read out of video memory during text mode and
  * saved here.  They could be read in the same manner at the start of a
  * game, but keeping a copy allows us to run the game to fix text mode
@@ -628,39 +628,44 @@ unsigned char font_data[256][16] = {
     {0x00, 0x00, 0x00, 0x00, 0x7C, 0x7C, 0x7C, 0x7C,
      0x7C, 0x7C, 0x7C, 0x00, 0x00, 0x00, 0x00, 0x00},
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-};
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 /*
-* text_to_image
-*   DESCRIPTION: produce a buffer holding a graphical image
-*   of the ASCII characters in the string.
-*   INPUTS: text_in -- pointer to input string
-*           buffer_ptr -- pointer to status bar buffer
-*           color_foreground, color_background
-*                   -- color used in status bar
-*   OUTPUTS: status_bar -- buffer for graphical image
-*   RETURN VALUE: 0 on success, -1 on fail
-*   SIDE EFFECTS: center text on the bar by this routine
-*/
-int text_to_image(char *text_in, unsigned char *buffer_ptr, unsigned char color_foreground, unsigned char color_background){
+ * text_to_image
+ *   DESCRIPTION: produce a buffer holding a graphical image
+ *   of the ASCII characters in the string.
+ *   INPUTS: text_in -- pointer to input string
+ *           buffer_ptr -- pointer to status bar buffer
+ *           color_foreground, color_background
+ *                   -- color used in status bar
+ *   OUTPUTS: status_bar -- buffer for graphical image
+ *   RETURN VALUE: 0 on success, -1 on fail
+ *   SIDE EFFECTS: center text on the bar by this routine
+ */
+int text_to_image(char *text_in, unsigned char *buffer_ptr, unsigned char color_foreground, unsigned char color_background)
+{
     int text_len = ece391_strlen((uint8_t *)text_in);
     int i, h, w = 0;
     int text_width = text_len * FONT_WIDTH;
     /* clear buffer to background color */
-    for (i = 0; i < FONT_HEIGHT * text_width; i++) { 
+    for (i = 0; i < FONT_HEIGHT * text_width; i++)
+    {
         buffer_ptr[i] = color_background;
     }
     int y;
     y = FONT_HEIGHT * SCROLL_X_DIM;
 
     /* loop through input string */
-    for (i = 0; i < text_len; i++){
+    for (i = 0; i < text_len; i++)
+    {
         char c = text_in[i];
         /* loop through rows of current character */
-        for (h = 0; h < FONT_HEIGHT; h++){
-            for (w = 0; w < FONT_WIDTH; w++){   
-                if ((font_data[(int)c][h] >> w) & 0x01){
+        for (h = 0; h < FONT_HEIGHT; h++)
+        {
+            for (w = 0; w < FONT_WIDTH; w++)
+            {
+                if ((font_data[(int)c][h] >> w) & 0x01)
+                {
                     /* 1 extra line above character -> (h + 1) */
                     /* write from right of character to left -> (FONT_WIDTH - w) */
                     buffer_ptr[text_width * h + i * FONT_WIDTH + FONT_WIDTH - w] = color_foreground;
@@ -672,11 +677,13 @@ int text_to_image(char *text_in, unsigned char *buffer_ptr, unsigned char color_
 }
 
 /*
-* printf
-*   DESCRIPTION: print out string to screen
-*/
-int put_text(char *text, img_t *img_ptr) {
-    if (!text || !img_ptr || !img_ptr->ptr) {
+ * printf
+ *   DESCRIPTION: print out string to screen
+ */
+int put_text(char *text, img_t *img_ptr)
+{
+    if (!text || !img_ptr || !img_ptr->ptr)
+    {
         return -1;
     }
     int text_len = ece391_strlen((uint8_t *)text);
@@ -688,33 +695,39 @@ int put_text(char *text, img_t *img_ptr) {
 }
 
 /*
-* set_text_color
-*   DESCRIPTION: Set the color setting of put_text
-*   INPUTS: color - color index 0x00 - 0x3F
-*           n - 0 for background, 1 for foreground
-*   RETURN VALUE: 0 on success, -1 on failure
-*   SIDE EFFECTS: 
-*/
-int set_text_color(unsigned char color, int n) {
-    if (color > 0x3F || n < 0 || n > 1) {
+ * set_text_color
+ *   DESCRIPTION: Set the color setting of put_text
+ *   INPUTS: color - color index 0x00 - 0x3F
+ *           n - 0 for background, 1 for foreground
+ *   RETURN VALUE: 0 on success, -1 on failure
+ *   SIDE EFFECTS:
+ */
+int set_text_color(unsigned char color, int n)
+{
+    if (color > 0x3F || n < 0 || n > 1)
+    {
         return -1;
     }
-    if (n == 0) {
+    if (n == 0)
+    {
         COLOR_BACKGROUND = color & 0x3F;
-    } else {
+    }
+    else
+    {
         COLOR_FOREGROUND = color & 0x3F;
     }
     return 0;
 }
 
 /*
-* set_canvas
-*   DESCRIPTION: Allow user to choose canvas from existing ones
-*   INPUTS: none
-*   RETURN VALUE: 0
-*   SIDE EFFECTS: 
-*/
-int set_canvas() {
+ * set_canvas
+ *   DESCRIPTION: Allow user to choose canvas from existing ones
+ *   INPUTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS:
+ */
+int set_canvas()
+{
     img_t text, canvas;
     unsigned char keypress[2];
     int bg_select = 0;
@@ -726,9 +739,10 @@ int set_canvas() {
     f_name[1] = 'g';
     f_name[2] = '0';
     f_name[3] = 0;
-    for (i = 0; i < NUM_BG; i++) {
-        fd_img = ece391_open (f_name);
-        ece391_read(fd_img, (void *)buf_bg[i], IMAGE_X_DIM *IMAGE_Y_DIM);
+    for (i = 0; i < NUM_BG; i++)
+    {
+        fd_img = ece391_open(f_name);
+        ece391_read(fd_img, (void *)buf_bg[i], IMAGE_X_DIM * IMAGE_Y_DIM);
         ece391_close(fd_img);
         f_name[2]++;
     }
@@ -749,23 +763,32 @@ int set_canvas() {
     // remove text
     ece391_write(fd_vga, &text, 0);
 
-    while (keypress[0] != ENTER) {
+    while (keypress[0] != ENTER)
+    {
         ece391_read(0, (void *)keypress, 1);
-        if (keypress[0] == 0) {
+        if (keypress[0] == 0)
+        {
             continue;
         }
 
-        if (keypress[0] == ARROW_RIGHT || keypress[0] == ARROW_DOWN) {
+        if (keypress[0] == ARROW_RIGHT || keypress[0] == ARROW_DOWN)
+        {
             bg_select++;
-            if (bg_select > (NUM_BG - 1)) {
+            if (bg_select > (NUM_BG - 1))
+            {
                 bg_select = 0;
             }
-        } else if (keypress[0] == ARROW_LEFT || keypress[0] == ARROW_UP) {
+        }
+        else if (keypress[0] == ARROW_LEFT || keypress[0] == ARROW_UP)
+        {
             bg_select--;
-            if (bg_select < 0) {
+            if (bg_select < 0)
+            {
                 bg_select = NUM_BG - 1;
             }
-        } else {
+        }
+        else
+        {
             continue;
         }
         // display new bg
@@ -778,53 +801,67 @@ int set_canvas() {
 }
 
 // Use rtc to delay for seconds
-void wait(int sec) {
+void wait(int sec)
+{
     // wait for 1 sec
     int cnt = 64 * sec;
     int garbage;
-    while (cnt-- != 0) {
+    while (cnt-- != 0)
+    {
         ece391_read(fd_rtc, &garbage, 4);
     }
 }
 
 // fill in a rectangular color block with white frame
-void set_color_block(int8_t *buf, int dim_x, int dim_y, int dim_frame, int8_t color) {
+void set_color_block(int8_t *buf, int dim_x, int dim_y, int dim_frame, int8_t color)
+{
     if (!buf || dim_x < 0 || dim_x > IMAGE_X_DIM || dim_y < 0 || dim_y > IMAGE_Y_DIM || dim_frame < 0 ||
-    2 * dim_frame >= dim_x || 2 * dim_frame >= dim_y || color < 0 || color > COLOR_WHITE) {
+        2 * dim_frame >= dim_x || 2 * dim_frame >= dim_y || color < 0 || color > COLOR_WHITE)
+    {
         return;
     }
     int i;
-    for (i = 0; i < dim_x * dim_y; i++) {
+    for (i = 0; i < dim_x * dim_y; i++)
+    {
         // add white frame
-        if ((i % dim_x) >= dim_frame && (i % dim_x) < (dim_x - dim_frame) && 
-        (i / dim_x) >= dim_frame && (i / dim_x) < (dim_y - dim_frame)) {
+        if ((i % dim_x) >= dim_frame && (i % dim_x) < (dim_x - dim_frame) &&
+            (i / dim_x) >= dim_frame && (i / dim_x) < (dim_y - dim_frame))
+        {
             buf[i] = color;
-        } else {
+        }
+        else
+        {
             buf[i] = COLOR_WHITE;
         }
     }
 }
 
 // fill in a rectangular color block with black frame
-void set_color_block2(int8_t *buf, int dim_x, int dim_y, int dim_frame, int8_t color) {
+void set_color_block2(int8_t *buf, int dim_x, int dim_y, int dim_frame, int8_t color)
+{
     if (!buf || dim_x < 0 || dim_x > IMAGE_X_DIM || dim_y < 0 || dim_y > IMAGE_Y_DIM || dim_frame < 0 ||
-    2 * dim_frame >= dim_x || 2 * dim_frame >= dim_y || color < 0 || color > COLOR_WHITE) {
+        2 * dim_frame >= dim_x || 2 * dim_frame >= dim_y || color < 0 || color > COLOR_WHITE)
+    {
         return;
     }
     int i;
-    for (i = 0; i < dim_x * dim_y; i++) {
+    for (i = 0; i < dim_x * dim_y; i++)
+    {
         // add white frame
-        if ((i % dim_x) >= dim_frame && (i % dim_x) < (dim_x - dim_frame) && 
-        (i / dim_x) >= dim_frame && (i / dim_x) < (dim_y - dim_frame)) {
+        if ((i % dim_x) >= dim_frame && (i % dim_x) < (dim_x - dim_frame) &&
+            (i / dim_x) >= dim_frame && (i / dim_x) < (dim_y - dim_frame))
+        {
             buf[i] = color;
-        } else {
+        }
+        else
+        {
             buf[i] = COLOR_BLACK;
         }
     }
 }
 
 // remove cursor
-void remove_cursor(int x,int y)
+void remove_cursor(int x, int y)
 {
     img_t cursor_temp;
     cursor_temp.x = x;
@@ -855,7 +892,7 @@ double sqrt_approx(double x, int iterations)
 
 void get_cursor_position(int *cursor_x, int *cursor_y, int delta_x, int delta_y)
 {
-    double length = sqrt_approx(delta_x*delta_x + delta_y*delta_y,10);
+    double length = sqrt_approx(delta_x * delta_x + delta_y * delta_y, 10);
 
     if (length > 5)
     {
@@ -886,7 +923,8 @@ void get_cursor_position(int *cursor_x, int *cursor_y, int delta_x, int delta_y)
 }
 
 // set up toolbox, called before using show_toolbox
-void set_toolbox() {
+void set_toolbox()
+{
     img_t toolbox, color_box, text;
     int32_t fd_toolbox;
     toolbox_x = 5;
@@ -897,7 +935,8 @@ void set_toolbox() {
     toolbox.dim_y = TOOLBOX_HEIGHT;
     toolbox.preserve_mask = 1;
     toolbox.ptr = (int8_t *)buf_toolbox;
-    if (-1 == (fd_toolbox = ece391_open ((uint8_t *)"toolbox"))) {
+    if (-1 == (fd_toolbox = ece391_open((uint8_t *)"toolbox")))
+    {
         return;
     }
     ece391_read(fd_toolbox, (void *)buf_toolbox, TOOLBOX_WIDTH * TOOLBOX_HEIGHT);
@@ -917,21 +956,26 @@ void set_toolbox() {
     color_box.dim_y = COLOR_BOX_SIZE;
     color_box.preserve_mask = 0;
     color_box.ptr = (int8_t *)buf_temp;
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < 7; i++)
+    {
         color_box.x = toolbox_x + 3 + 24 * (i & 0x01);
         color_box.y = toolbox_y + 16 + 20 * (i >> 1);
         set_color_block(color_box.ptr, COLOR_BOX_SIZE, COLOR_BOX_SIZE, 1, TOOLBOX_color[i]);
         ece391_write(fd_vga, (void *)&color_box, 0);
     }
-    color_box.x = toolbox_x + 3 + 24*(i & 0x01);
-    color_box.y = toolbox_y + 16 + 20*(i >> 1);
+    color_box.x = toolbox_x + 3 + 24 * (i & 0x01);
+    color_box.y = toolbox_y + 16 + 20 * (i >> 1);
     // 8th color box for palette select(show all color in 16*16 box)
-    for (j = 0; j < COLOR_BOX_SIZE * COLOR_BOX_SIZE; j++) {
+    for (j = 0; j < COLOR_BOX_SIZE * COLOR_BOX_SIZE; j++)
+    {
         // add frame
-        if ((j % COLOR_BOX_SIZE) > 0 && (j % COLOR_BOX_SIZE) < (COLOR_BOX_SIZE - 1) && 
-        (j / COLOR_BOX_SIZE) > 0 && (j / COLOR_BOX_SIZE) < (COLOR_BOX_SIZE - 1)) {
+        if ((j % COLOR_BOX_SIZE) > 0 && (j % COLOR_BOX_SIZE) < (COLOR_BOX_SIZE - 1) &&
+            (j / COLOR_BOX_SIZE) > 0 && (j / COLOR_BOX_SIZE) < (COLOR_BOX_SIZE - 1))
+        {
             color_box.ptr[j] = ((j % COLOR_BOX_SIZE) - 1) / 2 + 8 * ((j / COLOR_BOX_SIZE - 1) / 2);
-        } else {
+        }
+        else
+        {
             color_box.ptr[j] = COLOR_WHITE;
         }
     }
@@ -953,8 +997,10 @@ void set_toolbox() {
 }
 
 // display toolbox at (x, y)
-void show_toolbox(int8_t x, int8_t y) {
-    if (x < 0 || (x + TOOLBOX_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + TOOLBOX_HEIGHT) >= IMAGE_Y_DIM) {
+void show_toolbox(int8_t x, int8_t y)
+{
+    if (x < 0 || (x + TOOLBOX_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + TOOLBOX_HEIGHT) >= IMAGE_Y_DIM)
+    {
         return;
     }
     img_t toolbox;
@@ -969,7 +1015,8 @@ void show_toolbox(int8_t x, int8_t y) {
     ece391_write(fd_vga, (void *)&toolbox, 0);
 }
 
-void remove_toolbox() {
+void remove_toolbox()
+{
     img_t toolbox;
     toolbox.x = toolbox_x;
     toolbox.y = toolbox_y;
@@ -981,8 +1028,10 @@ void remove_toolbox() {
 }
 
 // display palette(64 colors) at (x, y)
-void show_palette(int8_t x, int8_t y) {
-    if (x < 0 || (x + PALETTE_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + PALETTE_HEIGHT) >= IMAGE_Y_DIM) {
+void show_palette(int8_t x, int8_t y)
+{
+    if (x < 0 || (x + PALETTE_WIDTH) >= IMAGE_X_DIM || y < 0 || (y + PALETTE_HEIGHT) >= IMAGE_Y_DIM)
+    {
         return;
     }
     img_t palette;
@@ -997,7 +1046,8 @@ void show_palette(int8_t x, int8_t y) {
     palette.preserve_mask = 1;
     palette.ptr = (int8_t *)buf_temp;
     int i;
-    for (i = 0; i < palette.dim_x * palette.dim_y; i++) {
+    for (i = 0; i < palette.dim_x * palette.dim_y; i++)
+    {
         // height of each color block is fixed at 2
         palette.ptr[i] = (uint8_t)(i / palette.dim_x / 2);
     }
@@ -1006,7 +1056,8 @@ void show_palette(int8_t x, int8_t y) {
 }
 
 // remove palette(64 colors) at previous location
-void remove_palette() {
+void remove_palette()
+{
     img_t palette;
 
     palette.x = palette_x;
@@ -1019,8 +1070,10 @@ void remove_palette() {
 }
 
 // get color at (x, y) inside palette
-int8_t get_color(int x, int y) {
-    if (x < palette_x || x > (palette_x + PALETTE_WIDTH) || y < palette_y || y > (palette_y + PALETTE_HEIGHT)) {
+int8_t get_color(int x, int y)
+{
+    if (x < palette_x || x > (palette_x + PALETTE_WIDTH) || y < palette_y || y > (palette_y + PALETTE_HEIGHT))
+    {
         return -1;
     }
     int8_t color;
@@ -1040,16 +1093,18 @@ int main()
     canvas.x = 0;
     canvas.y = 0;
     canvas.preserve_mask = 0;
-    if (-1 == (fd_vga = ece391_open((uint8_t *)"vga"))) {
+    if (-1 == (fd_vga = ece391_open((uint8_t *)"vga")))
+    {
         return 1;
     }
     fd_rtc = ece391_open((uint8_t *)"rtc");
-    
+
     // set RTC freq to 64Hz
     int ret_val = 64;
     ret_val = ece391_write(fd_rtc, &ret_val, 4);
 
-    if (0 == ece391_getargs (buf_canvas, 1024) && -1 != (fd_img = ece391_open ((uint8_t *)buf_canvas)) && IMAGE_X_DIM *IMAGE_Y_DIM == ece391_read(fd_img, (void *)buf_canvas, IMAGE_X_DIM *IMAGE_Y_DIM)) {
+    if (0 == ece391_getargs(buf_canvas, 1024) && -1 != (fd_img = ece391_open((uint8_t *)buf_canvas)) && IMAGE_X_DIM * IMAGE_Y_DIM == ece391_read(fd_img, (void *)buf_canvas, IMAGE_X_DIM * IMAGE_Y_DIM))
+    {
         // use input image
         ece391_close(fd_img);
         canvas.ptr = (int8_t *)buf_canvas;
@@ -1066,7 +1121,9 @@ int main()
         wait(1);
         // Clear text
         ece391_write(fd_vga, &text, 0);
-    } else {
+    }
+    else
+    {
         ece391_close(fd_img);
         set_canvas();
         text.x = 2;
@@ -1076,12 +1133,11 @@ int main()
         set_text_color(COLOR_GREY, 0);
         set_text_color(COLOR_WHITE, 1);
         put_text("CANVAS SET!", &text);
-        
+
         wait(1);
         // Clear text
         ece391_write(fd_vga, &text, 0);
     }
-
 
     // shot toolbox with instruction text for 1 sec at beginning
     set_toolbox();
@@ -1097,31 +1153,34 @@ int main()
     cursor.x = cursor_x;
     cursor.y = cursor_y;
 
-    cursor.ptr = (int8_t *)buf_cursor_color;
-    int lclick=0, rclick=0, mclick=0;
+    cursor.ptr = (int8_t *)buf_cursor;
+    int lclick = 0, rclick = 0, mclick = 0;
     int pre_cursor_x = 0, pre_cursor_y = 0;
     int delta_x = 0, delta_y = 0;
     int toolbox_status = 0; // 0 off, 1 on
 
     mouse_t mouse_data;
-    mouse_t* mouse_ptr = &mouse_data;
+    mouse_t *mouse_ptr = &mouse_data;
+    int cursor_flag = 0;
 
-    // set_color_block2(buf_mouse, CURSOR_X_DIM, CURSOR_Y_DIM, 1, COLOR_WHITE);
+    // set_color_block2(buf_cursor, CURSOR_X_DIM, CURSOR_Y_DIM, 0, COLOR_GREEN);
 
     // TODO: add exit condition (press ESC!)
     unsigned char keypress[2];
-    // while (mclick==0) 
+    // while (mclick==0)
     // }
     // while (mclick == 0)
+    int rnd = 0;
     while (keypress[0] != ESC)
-    {     
+    {
+        rnd = (++rnd) % 128;
         ece391_read(fd_mouse, (void *)mouse_ptr, 0);
-        
+
         // TODO: decrease frequency
         delta_x = mouse_ptr->mouse_x;
         delta_y = mouse_ptr->mouse_y;
 
-        get_cursor_position(&cursor_x,&cursor_y,delta_x,delta_y);
+        get_cursor_position(&cursor_x, &cursor_y, delta_x, delta_y);
 
         lclick = mouse_ptr->mouse_l_click;
         rclick = mouse_ptr->mouse_r_click;
@@ -1131,119 +1190,114 @@ int main()
         // cursor.x = cursor_x;
         // cursor.y = cursor_y;
         // ece391_write(fd_vga, (void *)&cursor, 0);
-        
+
         // no click: show the cursor
         if (lclick==0 && rclick==0 && mclick==0)
         {
+            cursor.ptr = (int8_t *)buf_cursor;
             // undraw
-            cursor.x = pre_cursor_x;
-            cursor.y = pre_cursor_y;
-            cursor.preserve_mask = 1;
-            cursor.ptr = buf_cursor_color;
-            ece391_write(fd_vga, (void *)&cursor, 0); 
-            
-
-            // TODO: remove last cursor
-            // change preserve_mask of cursor from 0 to 1
-            // if (pre_cursor_x!=cursor_x && pre_cursor_y!=cursor_y)
-            // {
-            //     remove_cursor(pre_cursor_x, pre_cursor_y);
-            // }
+            if (cursor_flag==1){
+                cursor.x = pre_cursor_x;
+                cursor.y = pre_cursor_y;
+                cursor.preserve_mask = 1;
+                ece391_write(fd_vga, (void *)&cursor, 0);
+            }
 
             // draw new cursor
+            cursor.preserve_mask = 1;
             cursor.x = cursor_x;
             cursor.y = cursor_y;
             ece391_write(fd_vga, (void *)&cursor, 0);
+            cursor_flag = 1;
         }
-        
+
         // ece391_read(0, (void *)keypress, 1);
         // right click: show toolbox // TODO: press "T" to show toolbox
-        // if (keypress[0] == T && toolbox_status == 0)
-        // {
-        //     show_toolbox(toolbox_x, toolbox_y);
-        //     toolbox_status = 1;
-        // } 
-        // else if (toolbox_status == 1 && keypress[0] == T) // press "T" again to quit toolbox
-        // { 
-        //     remove_toolbox();
-        //     toolbox_status = 0;
-        // }
-        // else if (toolbox_status == 1)
-        // {
-        //     remove_toolbox();
-        //     toolbox_x += (cursor_x - pre_cursor_x);
-        //     toolbox_y += (cursor_y - pre_cursor_y);
-        //     show_toolbox();
-        // } 
-        // else {}
+        if (keypress[0] == T && toolbox_status == 0)
+        {
+            show_toolbox(toolbox_x, toolbox_y);
+            toolbox_status = 1;
+        }
+        else if (toolbox_status == 1 && rclick == 1) // press "T" again to quit toolbox
+        {
+            remove_toolbox();
+            toolbox_status = 0;
+        }
+        else {}
 
         // left click
-        // if (lclick == 1)
-        // {
+        if (lclick)
+        {
+            // cursor_flag = 0;
             // only allow change color or switch tool or drag toolbox if toolbox is on
             // TODO: toolbox_color order
-            // if (toolbox_status == 1)
-            // {  
-            //     if (cursor.x>=3+toolbox_x && cursor.x<= 3+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<=16+toolbox_y+COLOR_BOX_SIZE) // color (1,1) 
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[0]);
-            //     }
-            //     else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y>=36+toolbox_y && cursor.y<= 36+toolbox_y+COLOR_BOX_SIZE) // color (2,1)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[2]);
-            //     }
-            //     else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,1)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[4]);
-            //     }
-            //     else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,1)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[6]);
-            //     }
-            //     else if (cursor.x>= 27+toolbox_x && cursor.x<= 27+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<= 16+toolbox_y+COLOR_BOX_SIZE) // color (1,2)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[1]);
-            //     }
-            //     else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 36 + toolbox_y && cursor.y <= 36 + toolbox_y + COLOR_BOX_SIZE) // color (2,2)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[3]);
-            //     }
-            //     else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,2)
-            //     {
-            //         set_color_block((int8_t *)buf_cursor_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[5]);
-            //     }
-            //     else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,2)
-            //     {
-            //         // TODO: palette
-            //         show_palette(toolbox_x + TOOLBOX_WIDTH + 2, toolbox_y);
-            //     }
-            //     else if (cursor.x >= toolbox_x && cursor.x <= toolbox_x + TOOLBOX_WIDTH && cursor.y >= toolbox_y && cursor.y <= toolbox_y + TOOLBOX_HEIGHT)
-            //     {
-            //         remove_toolbox();
-            //         toolbox_x += (cursor_x - pre_cursor_x);
-            //         toolbox_y += (cursor_y - pre_cursor_y);
-            //         show_toolbox(toolbox_x, toolbox_y);
-            //     } 
-            //     // else {}
-            // }
-            // else
-            // {
-            //     cursor.preserve_mask = 0;
-            //     cursor.ptr = (int8_t *)buf_cursor_color;
-            //     cursor.x = cursor_x;
-            //     cursor.y = cursor_y;
-            //     ece391_write(fd_mouse, (void *)&cursor, 0);
-            // }
-        // }
+            if (toolbox_status == 1)
+            {
+                if (cursor.x>=3+toolbox_x && cursor.x<= 3+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<=16+toolbox_y+COLOR_BOX_SIZE) // color (1,1)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[0]);
+                }
+                else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y>=36+toolbox_y && cursor.y<= 36+toolbox_y+COLOR_BOX_SIZE) // color (2,1)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[2]);
+                }
+                else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,1)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[4]);
+                }
+                else if (cursor.x >= 3 + toolbox_x && cursor.x <= 3 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,1)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[6]);
+                }
+                else if (cursor.x>= 27+toolbox_x && cursor.x<= 27+toolbox_x+COLOR_BOX_SIZE && cursor.y>=16+toolbox_y && cursor.y<= 16+toolbox_y+COLOR_BOX_SIZE) // color (1,2)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[1]);
+                }
+                else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 36 + toolbox_y && cursor.y <= 36 + toolbox_y + COLOR_BOX_SIZE) // color (2,2)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[3]);
+                }
+                else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 56 + toolbox_y && cursor.y <= 56 + toolbox_y + COLOR_BOX_SIZE) // color (3,2)
+                {
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, TOOLBOX_color[5]);
+                }
+                else if (cursor.x >= 27 + toolbox_x && cursor.x <= 27 + toolbox_x + COLOR_BOX_SIZE && cursor.y >= 76 + toolbox_y && cursor.y <= 76 + toolbox_y + COLOR_BOX_SIZE) // color (4,2)
+                {
+                    // TODO: palette
+                    show_palette(toolbox_x + TOOLBOX_WIDTH + 2, toolbox_y);
+                    set_color_block((int8_t *)buf_color, CURSOR_X_DIM, CURSOR_Y_DIM, 0, get_color(palette_x + 1, palette_y + rnd));
+                    wait(1);
+                    remove_palette();
+                }
+                else if (cursor.x >= toolbox_x && cursor.x <= toolbox_x + TOOLBOX_WIDTH && cursor.y >= toolbox_y && cursor.y <= toolbox_y + TOOLBOX_HEIGHT)
+                {
+                    cursor.ptr = (int8_t *)buf_cursor;
+                    cursor.x = cursor_x;
+                    cursor.y = cursor_y;
+                    cursor.preserve_mask = 1;
+                    ece391_write(fd_vga, (void *)&cursor, 0);
 
-
+                    remove_toolbox();
+                    show_toolbox(cursor_x - 5, cursor_y - 5);
+                }
+                // else {}
+            }
+            else
+            {
+                cursor.ptr = (int8_t *)buf_color;
+                cursor.preserve_mask = 0;
+                cursor.x = cursor_x;
+                cursor.y = cursor_y;
+                ece391_write(fd_vga, (void *)&cursor, 0);
+                cursor_flag = 0;
+            }
+        }
 
         pre_cursor_x = cursor_x;
         pre_cursor_y = cursor_y;
-        
+
         ece391_read(0, (void *)keypress, 1);
     }
-
 
     // TODO: show palette when palette select block is clicked
     // show_palette(70, 10);
@@ -1268,6 +1322,7 @@ int main()
 
     // ece391_write(fd_vga, (void *)&temp, 0); // color block with the color we pick
     // save file
+    return 0;
     canvas.x = 0;
     canvas.y = 0;
     canvas.dim_x = IMAGE_X_DIM;
@@ -1276,30 +1331,33 @@ int main()
     ece391_read(fd_vga, (void *)&canvas, 0);
     // image now stored in buf_canvas(320*200)
     // TODO: open new file, store
-    if (-1 == (fd_dir = ece391_open ((uint8_t*)"."))) {
+    if (-1 == (fd_dir = ece391_open((uint8_t *)".")))
+    {
         return 2;
     }
     uint8_t filename[20] = "mydraw";
-    if (-1 == ece391_write (fd_dir, (void *)filename, ece391_strlen(filename))){
+    if (-1 == ece391_write(fd_dir, (void *)filename, ece391_strlen(filename)))
+    {
         return 3;
     }
     ece391_close(fd_dir);
-    return 0;
-    if (-1 != (fd_dir = ece391_open((uint8_t *)filename))) {
+    if (-1 != (fd_dir = ece391_open((uint8_t *)filename)))
+    {
         return 3;
     }
     int32_t cnt;
     cnt = ece391_strlen(buf_canvas); // get the length of the filename
     buf_canvas[cnt] = '\0';
     cnt++;
-    if (-1 == ece391_write (fd_dir, (void *)buf_canvas, cnt)){
+    cnt = 100;
+    if (-1 == ece391_write(fd_dir, (void *)buf_canvas, cnt))
+    {
         return 3;
     }
-    return 0;
 
     /*
     ---USED TO TEST CANVAS READ(vga_read)---
-    */ 
+    */
     // text.x = 200;
     // text.y = 150;
     // text.preserve_mask = 1;

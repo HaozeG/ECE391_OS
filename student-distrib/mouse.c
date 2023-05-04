@@ -48,8 +48,8 @@ void mouse_init()
     mouse.mouse_x = IMAGE_X_DIM / 2;
     mouse.mouse_y = IMAGE_Y_DIM / 2;
 
-    kalman1_init(&mouse_state_x, 0, 0.001);
-    kalman1_init(&mouse_state_y, 0, 0.001);
+    kalman1_init(&mouse_state_x, 0, 0.00001);
+    kalman1_init(&mouse_state_y, 0, 0.00001);
 }
 
 void mouse_handler()
@@ -88,11 +88,11 @@ void mouse_handler()
     mouse.mouse_m_click = (status & 0x04) ? 1 : 0;
 
     // update mouse position
-    mouse.mouse_x = kalman1_filter(&mouse_state_x, movex);
-    mouse.mouse_y = -kalman1_filter(&mouse_state_y, movey);
-    // mouse.mouse_x = movex;
-    // mouse.mouse_y = -movey;
-    // printf("x: %d, y: %d\n", mouse.mouse_x, mouse.mouse_y);
+    // mouse.mouse_x = kalman1_filter(&mouse_state_x, movex);
+    // mouse.mouse_y = -kalman1_filter(&mouse_state_y, movey);
+    mouse.mouse_x = movex;
+    mouse.mouse_y = -movey;
+    // printf("x: %d, y: %d\n", mouse.mouse_l_click, mouse.mouse_r_click);
     return;
 }
 
@@ -184,8 +184,8 @@ int mouse_read(int32_t fd, void* buf, int32_t nbytes)
     mouse_buf->mouse_y = mouse.mouse_y;
     mouse.mouse_x = 0;
     mouse.mouse_y = 0;
-    mouse.mouse_l_click = 0;
-    mouse.mouse_r_click = 0;
-    mouse.mouse_m_click = 0;
+    // mouse.mouse_l_click = 0;
+    // mouse.mouse_r_click = 0;
+    // mouse.mouse_m_click = 0;
     return 0;
 }
