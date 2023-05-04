@@ -1127,21 +1127,19 @@ int main()
         mclick = mouse_ptr->mouse_m_click;
 
         // test
-        // cursor.x +=10;
-        // cursor.y +=10;
-        cursor.x = cursor_x;
-        cursor.y = cursor_y;
-        ece391_write(fd_vga, (void *)&cursor, 0);
+        // cursor.x = cursor_x;
+        // cursor.y = cursor_y;
+        // ece391_write(fd_vga, (void *)&cursor, 0);
+        
         // no click: show the cursor
-        // if (lclick==0 && rclick==0 && mclick==0)
-        // {
-            
+        if (lclick==0 && rclick==0 && mclick==0)
+        {
             // undraw
-            // cursor.x = pre_cursor_x;
-            // cursor.y = pre_cursor_y;
-            // cursor.preserve_mask = 1;
-            // cursor.ptr = buf_cursor_color;
-            // ece391_write(fd_vga, (void *)&cursor, 0); 
+            cursor.x = pre_cursor_x;
+            cursor.y = pre_cursor_y;
+            cursor.preserve_mask = 1;
+            cursor.ptr = buf_cursor_color;
+            ece391_write(fd_vga, (void *)&cursor, 0); 
             
 
             // TODO: remove last cursor
@@ -1152,10 +1150,10 @@ int main()
             // }
 
             // draw new cursor
-        //     cursor.x = cursor_x;
-        //     cursor.y = cursor_y;
-        //     ece391_write(fd_vga, (void *)&cursor, 0);
-        // }
+            cursor.x = cursor_x;
+            cursor.y = cursor_y;
+            ece391_write(fd_vga, (void *)&cursor, 0);
+        }
         
         // ece391_read(0, (void *)keypress, 1);
         // right click: show toolbox // TODO: press "T" to show toolbox

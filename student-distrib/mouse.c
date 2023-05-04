@@ -182,5 +182,8 @@ int mouse_read(int32_t fd, void* buf, int32_t nbytes)
     mouse_buf->mouse_y = mouse.mouse_y;
     mouse.mouse_x = 0;
     mouse.mouse_y = 0;
+    mouse.mouse_l_click = 0;
+    mouse.mouse_r_click = 0;
+    mouse.mouse_m_click = 0;
     return 0;
 }
