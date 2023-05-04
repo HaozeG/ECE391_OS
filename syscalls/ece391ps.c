@@ -835,35 +835,34 @@ void remove_cursor(int x,int y)
     ece391_write(fd_vga, (void *)&cursor_temp, 0);
 }
 
-// change cursor position with delta
+int round_nearest(double x)
+{
+    return (int)(x + (x >= 0 ? 0.5 : -0.5));
+}
+
+double sqrt_approx(double x, int iterations)
+{
+    double approx = x;
+    int i;
+
+    for (i = 0; i < iterations; ++i)
+    {
+        approx = 0.5 * (approx + x / approx);
+    }
+
+    return approx;
+}
+
 void get_cursor_position(int *cursor_x, int *cursor_y, int delta_x, int delta_y)
 {
-    // if (delta_x > 3)
-    // {
-    //     *cursor_x += 3;
-    // }
-    // else if (delta_x < -3)
-    // {
-    //     *cursor_x += -3;
-    // }
-    // else
-    // {
-    //     *cursor_x += delta_x;
-    // }
+    double length = sqrt_approx(delta_x*delta_x + delta_y*delta_y,10);
 
-    // if (delta_y > 3)
-    // {
-    //     *cursor_y += 3;
-    // }
-    // else if (delta_y < -3)
-    // {
-    //     *cursor_y += -3;
-    // }
-    // else
-    // {
-    //     *cursor_y += delta_y;
-    // }
-
+    if (length > 5)
+    {
+        double scale_factor = 5 / length;
+        delta_x = round_nearest(delta_x * scale_factor);
+        delta_y = round_nearest(delta_y * scale_factor);
+    }
     *cursor_x += delta_x;
     *cursor_y += delta_y;
 
