@@ -11,14 +11,13 @@ int main() {
         ece391_fdputs (1, (uint8_t*)"could not read arguments\n");
 	    return 3;
     }
-
-    if (-1 == (fd = ece391_open (buf))) { // get a valid fd for the file. 
-        ece391_fdputs (1, (uint8_t*)"file not found\n");
-	    return 2;
+    if (-1 == (fd = ece391_open ((uint8_t*)"."))) {
+        ece391_fdputs (1, (uint8_t*)"directory open failed\n");
+        return 2;
     }
     cnt = ece391_strlen(buf); // get the length of the filename
-    buf[cnt] = '\0';
-    cnt++;
+    // buf[cnt] = '\0';
+    // cnt++;
     if (-1 == ece391_write (fd, buf, cnt)){
         return 3;
     }
