@@ -1279,6 +1279,12 @@ int main()
 
                     remove_toolbox();
                     show_toolbox(cursor_x - 5, cursor_y - 5);
+                    
+                    cursor.ptr = (int8_t *)buf_cursor;
+                    cursor.x = cursor_x;
+                    cursor.y = cursor_y;
+                    cursor.preserve_mask = 1;
+                    ece391_write(fd_vga, (void *)&cursor, 0);
                 }
                 // else {}
             }
