@@ -16,7 +16,6 @@ int main() {
         return 2;
     }
     cnt = ece391_strlen(buf); // get the length of the filename
-    printf("%d length of filename", cnt);
     if (-1 == ece391_write (fd, buf, cnt)){
         return 3;
     }
