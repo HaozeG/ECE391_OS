@@ -240,8 +240,8 @@ int32_t open_directory(const uint8_t* filename) {
 */
 int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
     directory_entry_t* dentry;
-    if (fd < 2 || fd > 7) {
-        return -1; 
+    if (buf == 0) {
+        return 0;
     }
     int i, j;
     int avail_inode = -1;
@@ -257,7 +257,7 @@ int32_t write_directory(int32_t fd, const void* buf, int32_t nbytes) {
     if (avail_inode == -1) {
         return -1; 
     }
-    for (i = 0; i < 64; i++) {
+    for (i = 1; i < 63; i++) {
         if (read_dentry_by_name((direc_entry_start_ptr+i)->file_name, dentry) == -1) { // we found a dentry that's not in use. 
             strncpy((int8_t *)(direc_entry_start_ptr+i)->file_name, (int8_t *)name, 32);
             (direc_entry_start_ptr+i)->file_type = 2; // we are only able to write regular files. 

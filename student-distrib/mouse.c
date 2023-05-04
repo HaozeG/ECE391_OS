@@ -1,9 +1,11 @@
 #include "mouse.h"
 #include "kalman_filter.h"
+#include "kalman_filter.h"
 
 // global variables for mouse
 mouse_t mouse;
 kalman1_state mouse_state_x;
+kalman1_state mouse_state_y;kalman1_state mouse_state_x;
 kalman1_state mouse_state_y;
 
 void mouse_init()
